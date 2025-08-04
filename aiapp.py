@@ -4,6 +4,7 @@ import time
 import json
 import os
 from datetime import datetime
+from dotenv import load_dotenv
 import openai
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QFrame,
@@ -12,10 +13,13 @@ from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor, QPalette
 from PyQt5.QtCore import Qt, QSize, QThread, pyqtSignal
 from openai import OpenAI
 
-# OpenAI API 配置
-OPENAI_BASE_URL = "https://openrouter.ai/api/v1"  # API基础URL
-OPENAI_API_KEY = ""  # 请替换为您的API密钥
-OPENAI_MODEL_NAME = "deepseek/deepseek-chat-v3-0324:free"  # 使用的模型名称
+# 加载.env文件中的配置
+load_dotenv()
+
+# 从环境变量中获取API配置
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_MODEL_NAME = os.getenv("OPENAI_MODEL_NAME")
 
 # 配置OpenAI客户端
 client = OpenAI(

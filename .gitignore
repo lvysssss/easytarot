@@ -9,6 +9,9 @@ build/
 # 忽略历史记录文件
 history.json
 
+# 忽略环境变量配置文件
+.env
+
 # 忽略IDE配置文件
 .idea/
 .vscode/
