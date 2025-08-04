@@ -1,0 +1,36 @@
+# 忽略虚拟环境文件夹
+venv/
+
+# 忽略打包生成的文件
+dist/
+
+build/
+
+# 忽略历史记录文件
+history.json
+
+# 忽略IDE配置文件
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 忽略Python字节码文件
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 忽略证书文件
+*.pem
+
+# 忽略日志文件
+*.log
+
+# 忽略缓存文件
+*.cache
+
+# 忽略本地配置文件
+local_settings.py
