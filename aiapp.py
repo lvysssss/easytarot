@@ -7,7 +7,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 import openai
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                             QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QFrame,
+                             QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QFrame, QComboBox,
                              QScrollArea, QGroupBox, QListWidget, QListWidgetItem, QDialog, QMessageBox)
 from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor, QPalette
 from PyQt5.QtCore import Qt, QSize, QThread, pyqtSignal
@@ -591,11 +591,9 @@ class TarotApp(QMainWindow):
         count_label.setFont(QFont("Arial", 12))
         count_label.setStyleSheet("color: #432818;")
         
-        self.card_count = QSpinBox()
-        self.card_count.setRange(1, 10)
-        self.card_count.setValue(3)
+        self.card_count = QComboBox()
         self.card_count.setStyleSheet("""
-            QSpinBox {
+            QComboBox {
                 background-color: #f8f0e5;
                 border: 1px solid #d4a373;
                 border-radius: 5px;
@@ -603,7 +601,28 @@ class TarotApp(QMainWindow):
                 font-size: 14px;
                 color: #432818;
             }
+            QComboBox::drop-down {
+                border-left: 1px solid #d4a373;
+            }
         """)
+        
+        # 添加选项和工具提示
+        self.card_count.addItem("1")
+        self.card_count.setItemData(0, "单牌解读：适合简单问题，快速得到直接答案", Qt.ToolTipRole)
+        
+        self.card_count.addItem("3")
+        self.card_count.setItemData(1, "三牌阵：过去、现在、未来，适合大多数问题", Qt.ToolTipRole)
+        
+        self.card_count.addItem("5")
+        self.card_count.setItemData(2, "五牌阵：更详细的分析，适合复杂问题", Qt.ToolTipRole)
+        
+        self.card_count.addItem("7")
+        self.card_count.setItemData(3, "七牌阵：深入探讨问题的各个方面", Qt.ToolTipRole)
+        
+        self.card_count.addItem("10")
+        self.card_count.setItemData(4, "十牌阵：全面分析，适合重大决策", Qt.ToolTipRole)
+        
+        self.card_count.setCurrentIndex(1)  # 默认选择3张牌
         
         count_layout.addWidget(count_label)
         count_layout.addWidget(self.card_count)
@@ -670,7 +689,7 @@ class TarotApp(QMainWindow):
             return
         
         # 获取抽牌数量
-        num_cards = self.card_count.value()
+        num_cards = int(self.card_count.currentText())
         
         # 清空之前的卡片
         for i in reversed(range(self.cards_layout.count())): 
