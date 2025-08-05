@@ -9,7 +9,7 @@ import openai
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QFrame, QComboBox,
                              QScrollArea, QGroupBox, QListWidget, QListWidgetItem, QDialog, QMessageBox)
-from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor, QPalette
+from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor, QPalette, QClipboard
 from PyQt5.QtCore import Qt, QSize, QThread, pyqtSignal
 from openai import OpenAI
 
@@ -585,6 +585,25 @@ class TarotApp(QMainWindow):
         self.history_button.clicked.connect(self.show_history)
         self.history_button.setCursor(Qt.PointingHandCursor)
         
+        # 复制按钮
+        self.copy_button = QPushButton("复制牌面")
+        self.copy_button.setFont(QFont("Arial", 12, QFont.Bold))
+        self.copy_button.setStyleSheet("""
+            QPushButton {
+                background-color: #d4a373;
+                color: white;
+                border-radius: 8px;
+                padding: 12px 24px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #bc6c25;
+            }
+        """)
+        self.copy_button.clicked.connect(self.copy_cards_info)
+        self.copy_button.setCursor(Qt.PointingHandCursor)
+        self.copy_button.setEnabled(False)  # 初始时禁用，抽牌后启用
+        
         # 抽牌数量选择
         count_layout = QHBoxLayout()
         count_label = QLabel("抽牌数量:")
@@ -647,6 +666,7 @@ class TarotApp(QMainWindow):
         self.draw_button.setCursor(Qt.PointingHandCursor)
         
         control_layout.addWidget(self.history_button)
+        control_layout.addWidget(self.copy_button)
         control_layout.addLayout(count_layout)
         control_layout.addWidget(self.draw_button)
         
@@ -681,6 +701,22 @@ class TarotApp(QMainWindow):
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
     
+    def copy_cards_info(self):
+        # 收集所有牌的信息
+        cards_info = []
+        for i, card in enumerate(self.drawn_cards, 1):
+            cards_info.append(f"第{i}张牌: {card.name} ({card.orientation})")
+        
+        # 拼接成文本
+        cards_text = "\n".join(cards_info)
+        
+        # 复制到剪贴板
+        clipboard = QApplication.clipboard()
+        clipboard.setText(cards_text)
+        
+        # 显示提示
+        QMessageBox.information(self, "复制成功", "已复制牌面信息到剪贴板！")
+        
     def draw_cards(self):
         # 获取问题
         question = self.question_input.text().strip()
@@ -703,6 +739,9 @@ class TarotApp(QMainWindow):
         for card in self.drawn_cards:
             card_widget = CardWidget(card)
             self.cards_layout.addWidget(card_widget)
+        
+        # 启用复制按钮
+        self.copy_button.setEnabled(True)
         
         # 定义回调函数，用于保存历史记录
         def save_history_callback(analysis, error):
