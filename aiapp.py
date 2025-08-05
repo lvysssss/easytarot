@@ -714,8 +714,6 @@ class TarotApp(QMainWindow):
         clipboard = QApplication.clipboard()
         clipboard.setText(cards_text)
         
-        # 显示提示
-        QMessageBox.information(self, "复制成功", "已复制牌面信息到剪贴板！")
         
     def draw_cards(self):
         # 获取问题
