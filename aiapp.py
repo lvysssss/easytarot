@@ -285,20 +285,29 @@ class HistoryDialog(QDialog):
         button_layout = QHBoxLayout()
         
         self.delete_button = QPushButton("删除选中记录")
-        self.delete_button.setStyleSheet(""
+        self.delete_button.setStyleSheet(
             "QPushButton {background-color: #d4a373; color: white; border-radius: 5px; padding: 5px 10px;}"
             "QPushButton:hover {background-color: #bc6c25;}"
         )
         self.delete_button.clicked.connect(self.delete_history_item)
         
+        self.copy_button = QPushButton("复制牌面信息")
+        self.copy_button.setStyleSheet(
+            "QPushButton {background-color: #d4a373; color: white; border-radius: 5px; padding: 5px 10px;}"
+            "QPushButton:hover {background-color: #bc6c25;}"
+        )
+        self.copy_button.clicked.connect(self.copy_history_info)
+        self.copy_button.setCursor(Qt.PointingHandCursor)
+        
         self.close_button = QPushButton("关闭")
-        self.close_button.setStyleSheet(""
+        self.close_button.setStyleSheet(
             "QPushButton {background-color: #d4a373; color: white; border-radius: 5px; padding: 5px 10px;}"
             "QPushButton:hover {background-color: #bc6c25;}"
         )
         self.close_button.clicked.connect(self.close)
         
         button_layout.addWidget(self.delete_button)
+        button_layout.addWidget(self.copy_button)
         button_layout.addStretch()
         button_layout.addWidget(self.close_button)
         
@@ -342,6 +351,30 @@ class HistoryDialog(QDialog):
         self.question_content.setText("")
         self.cards_content.setText("")
         self.analysis_content.setText("")
+        
+    def copy_history_info(self):
+        selected_items = self.history_list.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "警告", "请先选择要复制的记录")
+            return
+        
+        item = selected_items[0]
+        index = item.data(Qt.UserRole)
+        history_item = self.history[-(index + 1)]  # 反转索引，因为列表是反向显示的
+        
+        # 收集信息
+        cards_info = [f"问题：{history_item['question']}。"]
+        for i, card in enumerate(history_item['cards'], 1):
+            cards_info.append(f"第{i}张：{card['name']} ({card['orientation']})")
+        
+        # 拼接成文本
+        cards_text = "\n".join(cards_info)
+        
+        # 复制到剪贴板
+        clipboard = QApplication.clipboard()
+        clipboard.setText(cards_text)
+        
+        
     
     def closeEvent(self, event):
         # 保存历史记录
@@ -702,10 +735,13 @@ class TarotApp(QMainWindow):
         self.setCentralWidget(main_widget)
     
     def copy_cards_info(self):
+        # 获取问题
+        question = self.question_input.text().strip()
+        
         # 收集所有牌的信息
-        cards_info = []
+        cards_info = [f"问题：{question}。"]
         for i, card in enumerate(self.drawn_cards, 1):
-            cards_info.append(f"第{i}张牌: {card.name} ({card.orientation})")
+            cards_info.append(f"第{i}张：{card.name} ({card.orientation})")
         
         # 拼接成文本
         cards_text = "\n".join(cards_info)
