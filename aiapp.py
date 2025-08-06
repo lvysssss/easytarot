@@ -515,7 +515,7 @@ class TarotApp(QMainWindow):
         
         # 历史记录
         self.history = []
-        self.history_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'history.json')
+        self.history_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tarot_history.json')
         self.load_history()
     
     def load_history(self):
