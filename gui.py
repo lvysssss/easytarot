@@ -288,9 +288,16 @@ class AIAnalysisWidget(QWidget):
 
         # 创建并启动新的worker线程
         self.worker = AIAnalysisWorker(question, cards)
+        self.worker.analysis_update.connect(self.on_analysis_update)
         self.worker.analysis_complete.connect(self.on_analysis_complete)
         self.worker.analysis_error.connect(self.on_analysis_error)
         self.worker.start()
+
+    def on_analysis_update(self, partial_text):
+        """实时更新AI解读文本"""
+        self.analysis_text.setText(partial_text)
+        # 滚动到底部，便于查看最新输出
+        self.analysis_text.verticalScrollBar().setValue(self.analysis_text.verticalScrollBar().maximum())
 
     def on_analysis_complete(self, analysis):
         self.analysis_text.setText(analysis)

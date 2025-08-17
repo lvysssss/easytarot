@@ -4,6 +4,7 @@ from openai import OpenAI
 from PyQt5.QtCore import QThread, pyqtSignal
 
 class AIAnalysisWorker(QThread):
+    analysis_update = pyqtSignal(str)  # 实时部分文本
     analysis_complete = pyqtSignal(str)
     analysis_error = pyqtSignal(str)
 
@@ -40,7 +41,7 @@ class AIAnalysisWorker(QThread):
             self.analysis_error.emit(f"加载API密钥失败: {str(e)}")
 
     def run(self):
-        """运行AI分析"""
+        """运行AI分析（流式输出）"""
         try:
             if not self.client:
                 self.analysis_error.emit("未初始化OpenAI客户端")
@@ -49,7 +50,8 @@ class AIAnalysisWorker(QThread):
             # 构建提示词
             prompt = self.build_prompt()
 
-            # 调用OpenAI API
+            # 以流式方式调用 OpenAI 接口
+            partial_text = ""
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[
@@ -57,14 +59,18 @@ class AIAnalysisWorker(QThread):
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=1000,
-                temperature=0.7
+                temperature=0.7,
+                stream=True
             )
 
-            # 提取回复内容
-            analysis = response.choices[0].message.content.strip()
+            for chunk in response:
+                delta = chunk.choices[0].delta
+                if delta and delta.content:
+                    partial_text += delta.content
+                    self.analysis_update.emit(partial_text)
 
             # 发送完成信号
-            self.analysis_complete.emit(analysis)
+            self.analysis_complete.emit(partial_text.strip())
         except Exception as e:
             self.analysis_error.emit(f"AI分析失败: {str(e)}")
 
