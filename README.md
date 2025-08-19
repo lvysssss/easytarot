@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AI 塔罗牌占卜应用
 
 ## 项目概述
@@ -54,3 +55,7 @@ aiapp/
 - PyQt5: 5.15.9
 - openai: 0.27.8
 - python-dotenv: 1.0.0
+=======
+# easytarot
+这是一个基于PyQt5和OpenAI API的塔罗牌占卜应用程序。用户可以输入问题，抽取塔罗牌，并获得AI生成的专业解读。
+>>>>>>> ff2bf016352d562fb45f25495231fe6f767b75ac
