@@ -19,7 +19,7 @@ class CLITarotApp:
         self.app = QCoreApplication(sys.argv)
         
     def load_history(self):
-        \"\"\"加载历史记录\"\"\"
+        """加载历史记录"""
         try:
             if os.path.exists(self.history_file):
                 with open(self.history_file, 'r', encoding='utf-8') as f:
@@ -29,7 +29,7 @@ class CLITarotApp:
             self.history = []
     
     def save_history(self):
-        \"\"\"保存历史记录\"\"\"
+        """保存历史记录"""
         try:
             with open(self.history_file, 'w', encoding='utf-8') as f:
                 json.dump(self.history, f, ensure_ascii=False, indent=2)
@@ -37,7 +37,7 @@ class CLITarotApp:
             print(f"保存历史记录失败: {str(e)}")
 
     def show_history(self):
-        \"\"\"显示历史记录\"\"\"
+        """显示历史记录"""
         if not self.history:
             print("暂无历史记录。")
             return
@@ -54,7 +54,7 @@ class CLITarotApp:
             print("无效选择。")
 
     def show_history_detail(self, history_item):
-        \"\"\"显示历史记录详情\"\"\"
+        """显示历史记录详情"""
         print(f"\n问题: {history_item['question']}")
         print("\n抽取的牌:")
         for card in history_item['cards']:
@@ -63,7 +63,7 @@ class CLITarotApp:
         input("\n按回车返回...")
 
     def copy_cards_info(self, question, drawn_cards):
-        \"\"\"复制牌面信息到剪贴板（CLI版本简化为打印）\"\"\"
+        """复制牌面信息到剪贴板（CLI版本简化为打印）"""
         print("\n=== 牌面信息 ===")
         print(f"问题：{question}")
         for i, card in enumerate(drawn_cards, 1):
@@ -71,7 +71,7 @@ class CLITarotApp:
         print("================")
 
     def get_ai_analysis(self, question, cards):
-        \"\"\"获取AI分析结果\"\"\"
+        """获取AI分析结果"""
         print("\n正在生成AI解读，请稍候...")
         
         # 创建worker
@@ -112,7 +112,7 @@ class CLITarotApp:
         return analysis_result[0]
 
     def draw_cards(self, question, num_cards):
-        \"\"\"抽牌并进行解读\"\"\"
+        """抽牌并进行解读"""
         # 洗牌并抽牌
         self.deck = TarotDeck()  # 创建新牌堆
         drawn_cards = self.deck.draw(num_cards)
@@ -155,7 +155,7 @@ class CLITarotApp:
                 self.copy_cards_info(question, drawn_cards)
 
     def run(self):
-        \"\"\"运行CLI应用\"\"\"
+        """运行CLI应用"""
         print("=== AI 塔罗牌占卜 (CLI版本) ===")
         print("输入 'quit' 或 'exit' 退出程序")
         print("输入 'history' 查看历史记录")
