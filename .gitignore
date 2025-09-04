@@ -13,6 +13,7 @@ tarot_history.json
 .env
 
 # 忽略IDE配置文件
+QWEN.md
 .idea/
 .vscode/
 *.suo
@@ -37,3 +38,5 @@ __pycache__/
 
 # 忽略本地配置文件
 local_settings.py
+.gemini/
+gha-creds-*.json
