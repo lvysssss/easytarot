@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import readline  # 用于命令补全
 from datetime import datetime
 from tarot_deck import TarotDeck
 from ai_analysis import AIAnalysisWorker
@@ -17,6 +18,24 @@ class CLITarotApp:
         
         # 创建QApplication实例以支持QThread
         self.app = QCoreApplication(sys.argv)
+        
+        # 设置命令补全
+        self.setup_completion()
+        
+    def setup_completion(self):
+        """设置命令补全"""
+        # 定义补全函数
+        def completer(text, state):
+            options = ['/history', '/quit', '/exit']
+            matches = [option for option in options if option.startswith(text)]
+            if state < len(matches):
+                return matches[state]
+            else:
+                return None
+                
+        # 设置补全函数
+        readline.parse_and_bind("tab: complete")
+        readline.set_completer(completer)
         
     def load_history(self):
         """加载历史记录"""
@@ -157,39 +176,46 @@ class CLITarotApp:
     def run(self):
         """运行CLI应用"""
         print("=== AI 塔罗牌占卜 (CLI版本) ===")
-        print("输入 'quit' 或 'exit' 退出程序")
-        print("输入 'history' 查看历史记录")
+        print("输入 '/quit' 或 '/exit' 退出程序")
+        print("输入 '/history' 查看历史记录")
+        print("使用 Tab 键可以补全命令")
         
         while True:
-            print("\n" + "="*50)
-            command = input("请输入命令或问题: ").strip()
-            
-            if command.lower() in ['quit', 'exit']:
-                print("感谢使用AI塔罗牌占卜！")
-                break
-            elif command.lower() == 'history':
-                self.show_history()
-                continue
-            elif not command:
-                continue
+            try:
+                print("\n" + "="*50)
+                command = input("请输入命令或问题: ").strip()
                 
-            # 询问抽牌数量
-            while True:
-                try:
-                    num_cards_input = input("请选择抽牌数量 (1/3/5/7/10): ").strip()
-                    if num_cards_input.lower() == 'quit':
-                        print("感谢使用AI塔罗牌占卜！")
-                        return
-                    num_cards = int(num_cards_input)
-                    if num_cards in [1, 3, 5, 7, 10]:
-                        break
-                    else:
-                        print("请输入有效的抽牌数量: 1, 3, 5, 7, 或 10")
-                except ValueError:
-                    print("请输入有效的数字")
+                if command.lower() in ['/quit', '/exit']:
+                    print("感谢使用AI塔罗牌占卜！")
+                    break
+                elif command.lower() == '/history':
+                    self.show_history()
+                    continue
+                elif not command:
+                    continue
                     
-            # 抽牌并解读
-            self.draw_cards(command, num_cards)
+                # 询问抽牌数量
+                while True:
+                    try:
+                        num_cards_input = input("请选择抽牌数量 (1/3/5/7/10): ").strip()
+                        if num_cards_input.lower() in ['/quit', '/exit']:
+                            print("感谢使用AI塔罗牌占卜！")
+                            return
+                        num_cards = int(num_cards_input)
+                        if num_cards in [1, 3, 5, 7, 10]:
+                            break
+                        else:
+                            print("请输入有效的抽牌数量: 1, 3, 5, 7, 或 10")
+                    except ValueError:
+                        print("请输入有效的数字")
+                        
+                # 抽牌并解读
+                self.draw_cards(command, num_cards)
+                
+            except (EOFError, KeyboardInterrupt):
+                # 处理 Ctrl+C 或 Ctrl+D
+                print("\n\n感谢使用AI塔罗牌占卜！")
+                break
 
 def main():
     app = CLITarotApp()
