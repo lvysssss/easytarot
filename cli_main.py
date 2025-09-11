@@ -1,13 +1,19 @@
 import os
 import sys
 import json
-import readline  # 用于命令补全
 from datetime import datetime
 from tarot_deck import TarotDeck
 from ai_analysis import AIAnalysisWorker
 
 # 用于在CLI中同步获取AI分析结果
 from PyQt5.QtCore import QCoreApplication
+
+# readline is Unix-only, so we import it conditionally
+try:
+    import readline  # 用于命令补全
+    readline_available = True
+except ImportError:
+    readline_available = False
 
 class CLITarotApp:
     def __init__(self):
@@ -24,18 +30,23 @@ class CLITarotApp:
         
     def setup_completion(self):
         """设置命令补全"""
-        # 定义补全函数
-        def completer(text, state):
-            options = ['/history', '/quit', '/exit']
-            matches = [option for option in options if option.startswith(text)]
-            if state < len(matches):
-                return matches[state]
-            else:
-                return None
-                
-        # 设置补全函数
-        readline.parse_and_bind("tab: complete")
-        readline.set_completer(completer)
+        # 只在readline可用时设置命令补全
+        if readline_available:
+            # 定义补全函数
+            def completer(text, state):
+                options = ['/history', '/quit', '/exit']
+                matches = [option for option in options if option.startswith(text)]
+                if state < len(matches):
+                    return matches[state]
+                else:
+                    return None
+                    
+            # 设置补全函数
+            readline.parse_and_bind("tab: complete")
+            readline.set_completer(completer)
+        else:
+            # 在没有readline的系统上，提示用户命令补全不可用
+            print("注意：当前系统不支持命令补全功能")
         
     def load_history(self):
         """加载历史记录"""
@@ -178,7 +189,10 @@ class CLITarotApp:
         print("=== AI 塔罗牌占卜 (CLI版本) ===")
         print("输入 '/quit' 或 '/exit' 退出程序")
         print("输入 '/history' 查看历史记录")
-        print("使用 Tab 键可以补全命令")
+        if readline_available:
+            print("使用 Tab 键可以补全命令")
+        else:
+            print("注意：当前系统不支持命令补全功能")
         
         while True:
             try:
