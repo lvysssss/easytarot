@@ -1,3 +1,4 @@
 PyQt5==5.15.9
 openai>=1.0.0
 python-dotenv==1.0.1
+prompt_toolkit>=3.0.0

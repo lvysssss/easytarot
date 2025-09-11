@@ -8,12 +8,22 @@ from ai_analysis import AIAnalysisWorker
 # 用于在CLI中同步获取AI分析结果
 from PyQt5.QtCore import QCoreApplication
 
-# readline is Unix-only, so we import it conditionally
+# 尝试使用prompt_toolkit实现现代化CLI补全
+try:
+    from prompt_toolkit import PromptSession
+    from prompt_toolkit.completion import WordCompleter
+    from prompt_toolkit.history import FileHistory
+    from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+    PROMPT_TOOLKIT_AVAILABLE = True
+except ImportError:
+    PROMPT_TOOLKIT_AVAILABLE = False
+
+# 尝试使用readline作为备选方案
 try:
     import readline  # 用于命令补全
-    readline_available = True
+    READLINE_AVAILABLE = True
 except ImportError:
-    readline_available = False
+    READLINE_AVAILABLE = False
 
 class CLITarotApp:
     def __init__(self):
@@ -25,28 +35,44 @@ class CLITarotApp:
         # 创建QApplication实例以支持QThread
         self.app = QCoreApplication(sys.argv)
         
-        # 设置命令补全
-        self.setup_completion()
+        # 初始化现代化CLI输入系统
+        self.input_method = "basic"  # 默认为基本输入
         
-    def setup_completion(self):
-        """设置命令补全"""
-        # 只在readline可用时设置命令补全
-        if readline_available:
-            # 定义补全函数
-            def completer(text, state):
-                options = ['/history', '/quit', '/exit']
-                matches = [option for option in options if option.startswith(text)]
-                if state < len(matches):
-                    return matches[state]
-                else:
-                    return None
-                    
-            # 设置补全函数
-            readline.parse_and_bind("tab: complete")
-            readline.set_completer(completer)
-        else:
-            # 在没有readline的系统上，提示用户命令补全不可用
-            print("注意：当前系统不支持命令补全功能")
+        if PROMPT_TOOLKIT_AVAILABLE:
+            try:
+                from prompt_toolkit import PromptSession
+                from prompt_toolkit.completion import WordCompleter
+                from prompt_toolkit.history import FileHistory
+                from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+                
+                # 初始化prompt_toolkit会话
+                self.session = PromptSession(
+                    history=FileHistory(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.tarot_cli_history'))
+                )
+                
+                # 设置命令补全器
+                self.command_completer = WordCompleter(
+                    ['/history', '/quit', '/exit', '/help'],
+                    ignore_case=True,
+                    sentence=True
+                )
+                
+                # 设置数字补全器（用于抽牌数量）
+                self.number_completer = WordCompleter(
+                    ['1', '3', '5', '7', '10'],
+                    ignore_case=True,
+                    sentence=True
+                )
+                
+                self.input_method = "prompt_toolkit"
+            except Exception:
+                # 如果prompt_toolkit初始化失败，回退到readline
+                if READLINE_AVAILABLE:
+                    self.setup_readline_completion()
+                    self.input_method = "readline"
+        elif READLINE_AVAILABLE:
+            self.setup_readline_completion()
+            self.input_method = "readline"
         
     def load_history(self):
         """加载历史记录"""
@@ -65,6 +91,21 @@ class CLITarotApp:
                 json.dump(self.history, f, ensure_ascii=False, indent=2)
         except Exception as e:
             print(f"保存历史记录失败: {str(e)}")
+            
+    def setup_readline_completion(self):
+        """设置readline命令补全"""
+        # 定义补全函数
+        def completer(text, state):
+            options = ['/history', '/quit', '/exit']
+            matches = [option for option in options if option.startswith(text)]
+            if state < len(matches):
+                return matches[state]
+            else:
+                return None
+                
+        # 设置补全函数
+        readline.parse_and_bind("tab: complete")
+        readline.set_completer(completer)
 
     def show_history(self):
         """显示历史记录"""
@@ -189,7 +230,11 @@ class CLITarotApp:
         print("=== AI 塔罗牌占卜 (CLI版本) ===")
         print("输入 '/quit' 或 '/exit' 退出程序")
         print("输入 '/history' 查看历史记录")
-        if readline_available:
+        
+        if self.input_method == "prompt_toolkit":
+            print("使用 Tab 键可以补全命令")
+            print("使用方向键可以浏览历史命令")
+        elif self.input_method == "readline":
             print("使用 Tab 键可以补全命令")
         else:
             print("注意：当前系统不支持命令补全功能")
@@ -197,7 +242,22 @@ class CLITarotApp:
         while True:
             try:
                 print("\n" + "="*50)
-                command = input("请输入命令或问题: ").strip()
+                
+                # 根据可用的输入方法获取用户输入
+                if self.input_method == "prompt_toolkit":
+                    try:
+                        command = self.session.prompt(
+                            "请输入命令或问题: ",
+                            completer=self.command_completer,
+                            auto_suggest=AutoSuggestFromHistory()
+                        ).strip()
+                    except Exception:
+                        # 如果prompt_toolkit出现问题，回退到基本输入
+                        command = input("请输入命令或问题: ").strip()
+                elif self.input_method == "readline":
+                    command = input("请输入命令或问题: ").strip()
+                else:
+                    command = input("请输入命令或问题: ").strip()
                 
                 if command.lower() in ['/quit', '/exit']:
                     print("感谢使用AI塔罗牌占卜！")
@@ -211,7 +271,20 @@ class CLITarotApp:
                 # 询问抽牌数量
                 while True:
                     try:
-                        num_cards_input = input("请选择抽牌数量 (1/3/5/7/10): ").strip()
+                        # 根据可用的输入方法获取抽牌数量
+                        if self.input_method == "prompt_toolkit":
+                            try:
+                                num_cards_input = self.session.prompt(
+                                    "请选择抽牌数量 (1/3/5/7/10): ",
+                                    completer=self.number_completer,
+                                    auto_suggest=AutoSuggestFromHistory()
+                                ).strip()
+                            except Exception:
+                                # 如果prompt_toolkit出现问题，回退到基本输入
+                                num_cards_input = input("请选择抽牌数量 (1/3/5/7/10): ").strip()
+                        else:
+                            num_cards_input = input("请选择抽牌数量 (1/3/5/7/10): ").strip()
+                            
                         if num_cards_input.lower() in ['/quit', '/exit']:
                             print("感谢使用AI塔罗牌占卜！")
                             return

@@ -12,6 +12,7 @@ build/
 
 # 忽略历史记录文件
 tarot_history.json
+.tarot_cli_history  # 新增：prompt_toolkit历史记录文件
 
 # 忽略环境变量配置文件
 .env
@@ -36,6 +37,7 @@ __pycache__/
 
 # 忽略日志文件
 *.log
+
 
 # 忽略缓存文件
 *.cache
