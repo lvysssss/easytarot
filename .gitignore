@@ -1,5 +1,9 @@
 # 忽略虚拟环境文件夹
 venv/
+.venv/
+
+# 忽略UV缓存文件
+.uv/
 
 # 忽略打包生成的文件
 dist/
@@ -35,8 +39,22 @@ __pycache__/
 
 # 忽略缓存文件
 *.cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# 忽略UV锁定文件（可选，建议提交以保持一致性）
+# uv.lock
 
 # 忽略本地配置文件
 local_settings.py
 .gemini/
 gha-creds-*.json
+.vs/
