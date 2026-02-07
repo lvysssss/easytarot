@@ -12,7 +12,8 @@ build/
 
 # 忽略历史记录文件
 tarot_history.json
-.tarot_cli_history  # 新增：prompt_toolkit历史记录文件
+.tarot_cli_history  
+# 新增：prompt_toolkit历史记录文件
 
 # 忽略环境变量配置文件
 .env

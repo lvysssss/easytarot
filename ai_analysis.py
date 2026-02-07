@@ -58,7 +58,7 @@ class AIAnalysisWorker(QThread):
                     {"role": "system", "content": "你是一位专业的塔罗牌解读师，拥有丰富的塔罗牌知识和解读经验。你能够根据用户的问题和抽取的塔罗牌，提供深入、准确且有洞察力的解读。"},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=1000,
+                max_tokens=10000,
                 temperature=0.7,
                 stream=True
             )
