@@ -13,6 +13,102 @@ from PyQt5.QtGui import QCursor
 from tarot_deck import TarotDeck, TarotCard
 from ai_analysis import AIAnalysisWorker
 
+class DraggableTitleBar(QWidget):
+    def __init__(self, parent_window):
+        super().__init__(parent_window)
+        self.parent_window = parent_window
+        self.setFixedHeight(50)
+        self.setStyleSheet("""
+            QWidget {
+                background: transparent;
+                border: none;
+            }
+        """)
+        self.setCursor(Qt.OpenHandCursor)
+        
+        self.drag_position = None
+        self.is_dragging = False
+        self.setup_ui()
+    
+    def setup_ui(self):
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        title_label = QLabel("AI 塔罗牌占卜")
+        title_label.setFont(QFont("Segoe UI", 11))
+        title_label.setStyleSheet("color: rgba(251, 191, 36, 0.6);")
+        
+        close_btn = QPushButton("✕")
+        close_btn.setFixedSize(32, 32)
+        close_btn.setCursor(Qt.PointingHandCursor)
+        close_btn.setStyleSheet("""
+            QPushButton {
+                background: rgba(239, 68, 68, 0.3);
+                color: #ef4444;
+                border: none;
+                border-radius: 16px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: rgba(239, 68, 68, 0.6);
+            }
+        """)
+        close_btn.clicked.connect(self.parent_window.close)
+        
+        layout.addWidget(title_label)
+        layout.addStretch()
+        layout.addWidget(close_btn)
+        
+        self.setLayout(layout)
+    
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            child = self.childAt(event.pos())
+            if isinstance(child, QPushButton):
+                event.ignore()
+                return
+            
+            self.drag_position = event.globalPos() - self.parent_window.frameGeometry().topLeft()
+            self.is_dragging = True
+            self.setCursor(Qt.ClosedHandCursor)
+            event.accept()
+    
+    def mouseMoveEvent(self, event):
+        if self.is_dragging and self.drag_position:
+            new_pos = event.globalPos() - self.drag_position
+            
+            screen = QApplication.desktop().screenGeometry()
+            window_geometry = self.parent_window.frameGeometry()
+            
+            min_x = 0
+            min_y = 0
+            max_x = screen.width() - window_geometry.width()
+            max_y = screen.height() - window_geometry.height()
+            
+            new_pos.setX(max(min_x, min(new_pos.x(), max_x)))
+            new_pos.setY(max(min_y, min(new_pos.y(), max_y)))
+            
+            self.parent_window.move(new_pos)
+            event.accept()
+    
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.is_dragging = False
+            self.drag_position = None
+            self.setCursor(Qt.OpenHandCursor)
+            event.accept()
+    
+    def enterEvent(self, event):
+        if not self.is_dragging:
+            self.setCursor(Qt.OpenHandCursor)
+        super().enterEvent(event)
+    
+    def leaveEvent(self, event):
+        if not self.is_dragging:
+            self.setCursor(Qt.ArrowCursor)
+        super().leaveEvent(event)
+
 class ModernCardWidget(QWidget):
     def __init__(self, card, index, parent=None):
         super().__init__(parent)
@@ -117,6 +213,8 @@ class ModernHistoryDialog(QDialog):
         self.setAttribute(Qt.WA_TranslucentBackground)
         
         self.history = history
+        self.drag_position = None
+        self.is_dragging = False
         self.init_ui()
         self.setup_animations()
     
@@ -328,6 +426,43 @@ class ModernHistoryDialog(QDialog):
         self.shadow_effect.setColor(QColor(0, 0, 0, 150))
         self.shadow_effect.setOffset(0, 10)
         self.setGraphicsEffect(self.shadow_effect)
+    
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            child = self.childAt(event.pos())
+            if isinstance(child, QPushButton) or isinstance(child, QListWidget) or isinstance(child, QTextEdit):
+                event.ignore()
+                return
+            
+            self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
+            self.is_dragging = True
+            self.setCursor(Qt.ClosedHandCursor)
+            event.accept()
+    
+    def mouseMoveEvent(self, event):
+        if self.is_dragging and self.drag_position:
+            new_pos = event.globalPos() - self.drag_position
+            
+            screen = QApplication.desktop().screenGeometry()
+            window_geometry = self.frameGeometry()
+            
+            min_x = 0
+            min_y = 0
+            max_x = screen.width() - window_geometry.width()
+            max_y = screen.height() - window_geometry.height()
+            
+            new_pos.setX(max(min_x, min(new_pos.x(), max_x)))
+            new_pos.setY(max(min_y, min(new_pos.y(), max_y)))
+            
+            self.move(new_pos)
+            event.accept()
+    
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.is_dragging = False
+            self.drag_position = None
+            self.setCursor(Qt.ArrowCursor)
+            event.accept()
     
     def on_history_item_clicked(self, item):
         index = item.data(Qt.UserRole)
@@ -824,45 +959,7 @@ class ModernTarotApp(QMainWindow):
         self.setCentralWidget(main_container)
     
     def create_title_bar(self):
-        title_bar = QWidget()
-        title_bar.setFixedHeight(50)
-        title_bar.setStyleSheet("""
-            QWidget {
-                background: transparent;
-                border: none;
-            }
-        """)
-        
-        layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        
-        title_label = QLabel("AI 塔罗牌占卜")
-        title_label.setFont(QFont("Segoe UI", 11))
-        title_label.setStyleSheet("color: rgba(251, 191, 36, 0.6);")
-        
-        close_btn = QPushButton("✕")
-        close_btn.setFixedSize(32, 32)
-        close_btn.setStyleSheet("""
-            QPushButton {
-                background: rgba(239, 68, 68, 0.3);
-                color: #ef4444;
-                border: none;
-                border-radius: 16px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background: rgba(239, 68, 68, 0.6);
-            }
-        """)
-        close_btn.clicked.connect(self.close)
-        
-        layout.addWidget(title_label)
-        layout.addStretch()
-        layout.addWidget(close_btn)
-        
-        title_bar.setLayout(layout)
-        return title_bar
+        return DraggableTitleBar(self)
     
     def setup_animations(self):
         self.shadow_effect = QGraphicsDropShadowEffect()
