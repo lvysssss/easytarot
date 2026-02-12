@@ -1,7 +1,7 @@
 import sys
 import argparse
 from PyQt5.QtWidgets import QApplication
-from gui import TarotApp
+from gui import ModernTarotApp
 from cli_main import main as cli_main
 
 
@@ -22,7 +22,7 @@ def main():
         app.setStyle('Fusion')
         
         # 创建主窗口
-        window = TarotApp()
+        window = ModernTarotApp()
         window.show()
         
         # 运行应用程序

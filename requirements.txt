@@ -1,4 +1,13 @@
-PyQt5==5.15.9
+# AI 塔罗牌占卜应用依赖包
+
+# GUI框架 - 用于图形界面
+PyQt5>=5.15.0
+
+# OpenAI API客户端 - 用于AI解读
 openai>=1.0.0
-python-dotenv==1.0.1
+
+# 环境变量管理 - 用于加载API密钥
+python-dotenv>=1.0.0
+
+# 命令行增强 - 用于CLI版本的命令补全和历史记录
 prompt_toolkit>=3.0.0
