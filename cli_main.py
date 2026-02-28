@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import re
 from datetime import datetime
 from tarot_deck import TarotDeck
 from ai_analysis import AIAnalysisWorker
@@ -60,6 +61,12 @@ class CLITarotApp:
                 # 设置数字补全器（用于抽牌数量）
                 self.number_completer = WordCompleter(
                     ['1', '3', '5', '7', '10'],
+                    ignore_case=True,
+                    sentence=True
+                )
+
+                self.mode_completer = WordCompleter(
+                    ['1', '2'],
                     ignore_case=True,
                     sentence=True
                 )
@@ -126,12 +133,41 @@ class CLITarotApp:
 
     def show_history_detail(self, history_item):
         """显示历史记录详情"""
+        draw_mode = history_item.get('draw_mode', 'auto')
+        draw_mode_text = '自选模式' if draw_mode == 'manual' else '自动模式'
+
         print(f"\n问题: {history_item['question']}")
+        print(f"抽牌模式: {draw_mode_text}")
         print("\n抽取的牌:")
         for card in history_item['cards']:
             print(f"  {card['name']} ({card['orientation']}) - {card['meaning']}")
         print(f"\n解读结果:\n{history_item['analysis']}")
         input("\n按回车返回...")
+
+    def parse_manual_indices(self, raw_text, expected_count, max_index):
+        normalized_text = raw_text.replace('，', ',').strip()
+        tokens = [item for item in re.split(r'[\s,]+', normalized_text) if item]
+
+        if len(tokens) != expected_count:
+            raise ValueError(f"请输入 {expected_count} 个序号")
+
+        indices = []
+        seen = set()
+
+        for token in tokens:
+            if not token.isdigit():
+                raise ValueError("序号必须是数字")
+
+            index = int(token)
+            if index < 1 or index > max_index:
+                raise ValueError(f"序号超出范围，请输入 1 到 {max_index} 之间的数字")
+            if index in seen:
+                raise ValueError("序号不能重复")
+
+            seen.add(index)
+            indices.append(index)
+
+        return indices
 
     def copy_cards_info(self, question, drawn_cards):
         """复制牌面信息到剪贴板（CLI版本简化为打印）"""
@@ -182,11 +218,28 @@ class CLITarotApp:
             return None
         return analysis_result[0]
 
-    def draw_cards(self, question, num_cards):
+    def draw_cards(self, question, num_cards, draw_mode='auto'):
         """抽牌并进行解读"""
         # 洗牌并抽牌
         self.deck = TarotDeck()  # 创建新牌堆
-        drawn_cards = self.deck.draw(num_cards)
+        if draw_mode == 'manual':
+            while True:
+                try:
+                    print(f"\n当前为自选模式，请在 1-{len(self.deck.cards)} 中选择 {num_cards} 个序号")
+                    print("输入示例: 3 12 25 或 3,12,25")
+                    manual_input = input("请输入牌序号: ").strip()
+
+                    if manual_input.lower() in ['/quit', '/exit']:
+                        print("感谢使用AI塔罗牌占卜！")
+                        return
+
+                    indices = self.parse_manual_indices(manual_input, num_cards, len(self.deck.cards))
+                    drawn_cards = self.deck.draw_by_indices(indices)
+                    break
+                except ValueError as e:
+                    print(f"输入无效: {str(e)}")
+        else:
+            drawn_cards = self.deck.draw(num_cards)
         
         # 显示抽到的牌
         print(f"\n问题: {question}")
@@ -208,6 +261,7 @@ class CLITarotApp:
             history_item = {
                 'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'question': question,
+                'draw_mode': draw_mode,
                 'cards': [{
                     'name': card.name,
                     'orientation': card.orientation,
@@ -295,9 +349,36 @@ class CLITarotApp:
                             print("请输入有效的抽牌数量: 1, 3, 5, 7, 或 10")
                     except ValueError:
                         print("请输入有效的数字")
+
+                # 选择抽牌模式
+                while True:
+                    if self.input_method == "prompt_toolkit":
+                        try:
+                            mode_input = self.session.prompt(
+                                "请选择抽牌模式 (1=自动模式, 2=自选模式): ",
+                                completer=self.mode_completer,
+                                auto_suggest=AutoSuggestFromHistory()
+                            ).strip()
+                        except Exception:
+                            mode_input = input("请选择抽牌模式 (1=自动模式, 2=自选模式): ").strip()
+                    else:
+                        mode_input = input("请选择抽牌模式 (1=自动模式, 2=自选模式): ").strip()
+
+                    if mode_input.lower() in ['/quit', '/exit']:
+                        print("感谢使用AI塔罗牌占卜！")
+                        return
+
+                    if mode_input == '1':
+                        draw_mode = 'auto'
+                        break
+                    if mode_input == '2':
+                        draw_mode = 'manual'
+                        break
+
+                    print("请输入 1 或 2")
                         
                 # 抽牌并解读
-                self.draw_cards(command, num_cards)
+                self.draw_cards(command, num_cards, draw_mode)
                 
             except (EOFError, KeyboardInterrupt):
                 # 处理 Ctrl+C 或 Ctrl+D

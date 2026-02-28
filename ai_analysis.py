@@ -20,20 +20,20 @@ class AIAnalysisWorker(QThread):
     def load_api_key(self):
         """加载OpenAI API密钥并创建客户端"""
         try:
-            # 加载.env文件中的环境变量
-            load_dotenv()
+            for key in ['OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_MODEL_NAME']:
+                if key in os.environ:
+                    del os.environ[key]
             
-            # 从环境变量加载配置
+            load_dotenv(override=True)
+            
             api_key = os.environ.get('OPENAI_API_KEY')
             base_url = os.environ.get('OPENAI_BASE_URL')
             
-            # 创建客户端
             if api_key:
                 client_kwargs = {'api_key': api_key}
                 if base_url:
-                    client_kwargs['base_url'] = base_url
+                    client_kwargs['base_url'] = base_url.rstrip('/')
                 self.client = OpenAI(**client_kwargs)
-                # 保存模型名称
                 self.model_name = os.environ.get('OPENAI_MODEL_NAME', 'gpt-3.5-turbo')
             else:
                 raise Exception("未找到OpenAI API密钥，请在.env文件中设置OPENAI_API_KEY")

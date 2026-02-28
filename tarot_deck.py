@@ -125,3 +125,27 @@ class TarotDeck:
         if num_cards > len(self.cards):
             num_cards = len(self.cards)
         return [self.cards.pop() for _ in range(num_cards)]
+
+    def draw_by_indices(self, indices):
+        if not indices:
+            raise ValueError("请选择至少一张牌")
+
+        normalized = []
+        seen = set()
+        total_cards = len(self.cards)
+
+        for idx in indices:
+            if not isinstance(idx, int):
+                raise ValueError("序号必须是整数")
+            if idx < 1 or idx > total_cards:
+                raise ValueError(f"序号超出范围，必须在 1 到 {total_cards} 之间")
+            if idx in seen:
+                raise ValueError("序号不能重复")
+            seen.add(idx)
+            normalized.append(idx)
+
+        selected_cards = {}
+        for idx in sorted(normalized, reverse=True):
+            selected_cards[idx] = self.cards.pop(idx - 1)
+
+        return [selected_cards[idx] for idx in normalized]
