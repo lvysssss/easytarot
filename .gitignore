@@ -19,7 +19,6 @@ tarot_history.json
 .env
 
 # 忽略IDE配置文件
-QWEN.md
 .idea/
 .vscode/
 *.suo
@@ -61,3 +60,7 @@ local_settings.py
 .gemini/
 gha-creds-*.json
 .vs/
+#忽略ai编程相关文件
+QWEN.md
+AGENTS.md
+CLAUDE.md
