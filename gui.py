@@ -17,14 +17,14 @@ class DraggableTitleBar(QWidget):
     def __init__(self, parent_window):
         super().__init__(parent_window)
         self.parent_window = parent_window
-        self.setFixedHeight(50)
+        self.setFixedHeight(48)
         self.setStyleSheet("""
             QWidget {
-                background: transparent;
+                background: #FFFFFF;
                 border: none;
             }
         """)
-        self.setCursor(Qt.OpenHandCursor)
+        self.setCursor(Qt.ArrowCursor)
         
         self.drag_position = None
         self.is_dragging = False
@@ -32,35 +32,80 @@ class DraggableTitleBar(QWidget):
     
     def setup_ui(self):
         layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(20, 0, 0, 0)
+        layout.setSpacing(0)
         
         title_label = QLabel("AI 塔罗牌占卜")
-        title_label.setFont(QFont("Segoe UI", 11))
-        title_label.setStyleSheet("color: rgba(251, 191, 36, 0.6);")
+        title_label.setFont(QFont("Microsoft YaHei", 12, QFont.Bold))
+        title_label.setStyleSheet("color: #000000; background: transparent;")
         
-        close_btn = QPushButton("✕")
-        close_btn.setFixedSize(32, 32)
-        close_btn.setCursor(Qt.PointingHandCursor)
-        close_btn.setStyleSheet("""
-            QPushButton {
-                background: rgba(239, 68, 68, 0.3);
-                color: #ef4444;
+        layout.addWidget(title_label)
+        layout.addStretch()
+        
+        btn_size = 46
+        btn_style = """
+            QPushButton {{
+                background: transparent;
+                color: #000000;
                 border: none;
-                border-radius: 16px;
+                font-size: 14px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background: #E5E5E5;
+            }}
+            QPushButton:pressed {{
+                background: #D0D0D0;
+            }}
+        """
+        
+        self.min_btn = QPushButton("─")
+        self.min_btn.setFixedSize(btn_size, btn_size)
+        self.min_btn.setCursor(Qt.PointingHandCursor)
+        self.min_btn.setStyleSheet(btn_style)
+        self.min_btn.clicked.connect(self.parent_window.showMinimized)
+        
+        self.max_btn = QPushButton("□")
+        self.max_btn.setFixedSize(btn_size, btn_size)
+        self.max_btn.setCursor(Qt.PointingHandCursor)
+        self.max_btn.setStyleSheet(btn_style)
+        self.max_btn.clicked.connect(self.toggle_maximize)
+        
+        self.close_btn = QPushButton("✕")
+        self.close_btn.setFixedSize(btn_size, btn_size)
+        self.close_btn.setCursor(Qt.PointingHandCursor)
+        self.close_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                color: #000000;
+                border: none;
                 font-size: 14px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background: rgba(239, 68, 68, 0.6);
+                background: #E81123;
+                color: #FFFFFF;
+            }
+            QPushButton:pressed {
+                background: #C50F1F;
+                color: #FFFFFF;
             }
         """)
-        close_btn.clicked.connect(self.parent_window.close)
+        self.close_btn.clicked.connect(self.parent_window.close)
         
-        layout.addWidget(title_label)
-        layout.addStretch()
-        layout.addWidget(close_btn)
+        layout.addWidget(self.min_btn)
+        layout.addWidget(self.max_btn)
+        layout.addWidget(self.close_btn)
         
         self.setLayout(layout)
+    
+    def toggle_maximize(self):
+        if self.parent_window.isMaximized():
+            self.parent_window.showNormal()
+            self.max_btn.setText("□")
+        else:
+            self.parent_window.showMaximized()
+            self.max_btn.setText("❐")
     
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -71,11 +116,14 @@ class DraggableTitleBar(QWidget):
             
             self.drag_position = event.globalPos() - self.parent_window.frameGeometry().topLeft()
             self.is_dragging = True
-            self.setCursor(Qt.ClosedHandCursor)
             event.accept()
     
     def mouseMoveEvent(self, event):
         if self.is_dragging and self.drag_position:
+            if self.parent_window.isMaximized():
+                self.parent_window.showNormal()
+                self.max_btn.setText("□")
+            
             new_pos = event.globalPos() - self.drag_position
             
             screen = QApplication.desktop().screenGeometry()
@@ -96,18 +144,11 @@ class DraggableTitleBar(QWidget):
         if event.button() == Qt.LeftButton:
             self.is_dragging = False
             self.drag_position = None
-            self.setCursor(Qt.OpenHandCursor)
             event.accept()
     
-    def enterEvent(self, event):
-        if not self.is_dragging:
-            self.setCursor(Qt.OpenHandCursor)
-        super().enterEvent(event)
-    
-    def leaveEvent(self, event):
-        if not self.is_dragging:
-            self.setCursor(Qt.ArrowCursor)
-        super().leaveEvent(event)
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.toggle_maximize()
 
 class ModernCardWidget(QWidget):
     def __init__(self, card, index, parent=None):
@@ -115,66 +156,64 @@ class ModernCardWidget(QWidget):
         self.card = card
         self.index = index
         
-        self.setFixedSize(200, 320)
+        self.setFixedSize(180, 280)
         self.setCursor(Qt.PointingHandCursor)
         
         self.setup_ui()
-        self.setup_animations()
     
     def setup_ui(self):
         self.setStyleSheet("""
             ModernCardWidget {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 rgba(45, 27, 78, 0.9),
-                    stop:0.5 rgba(76, 29, 149, 0.9),
-                    stop:1 rgba(45, 27, 78, 0.9));
-                border-radius: 20px;
-                border: 2px solid rgba(251, 191, 36, 0.3);
+                background: #FFFFFF;
+                border-radius: 12px;
+                border: 1px solid #E0E0E0;
             }
             ModernCardWidget:hover {
-                border: 2px solid rgba(251, 191, 36, 0.8);
+                border: 2px solid #000000;
             }
         """)
         
         layout = QVBoxLayout()
-        layout.setContentsMargins(15, 15, 15, 15)
-        layout.setSpacing(8)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(10)
         
         card_number = QLabel(f"#{self.index}")
-        card_number.setFont(QFont("Segoe UI", 10))
-        card_number.setStyleSheet("color: rgba(251, 191, 36, 0.6);")
+        card_number.setFont(QFont("Microsoft YaHei", 10))
+        card_number.setStyleSheet("color: #999999; background: transparent;")
         card_number.setAlignment(Qt.AlignRight)
         
         title_label = QLabel(self.card.name)
-        title_font = QFont("Segoe UI", 13, QFont.Bold)
+        title_font = QFont("Microsoft YaHei", 12, QFont.Bold)
         title_label.setFont(title_font)
         title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("color: #fbbf24;")
+        title_label.setStyleSheet("color: #000000; background: transparent;")
+        title_label.setWordWrap(True)
         
         orientation_label = QLabel(self.card.orientation)
-        orientation_font = QFont("Segoe UI", 10, QFont.Bold)
+        orientation_font = QFont("Microsoft YaHei", 10, QFont.Bold)
         orientation_label.setFont(orientation_font)
         orientation_label.setAlignment(Qt.AlignCenter)
         
         if self.card.orientation == "正位":
-            orientation_label.setStyleSheet("color: #34d399; padding: 4px 12px; background: rgba(52, 211, 153, 0.2); border-radius: 12px;")
+            orientation_label.setStyleSheet("color: #FFFFFF; padding: 6px 16px; background: #000000; border-radius: 16px;")
         else:
-            orientation_label.setStyleSheet("color: #f87171; padding: 4px 12px; background: rgba(248, 113, 113, 0.2); border-radius: 12px;")
+            orientation_label.setStyleSheet("color: #FFFFFF; padding: 6px 16px; background: #333333; border-radius: 16px;")
         
         suit_label = QLabel(f"花色: {self.card.suit if self.card.suit else '大阿卡纳'}")
-        suit_label.setFont(QFont("Segoe UI", 9))
+        suit_label.setFont(QFont("Microsoft YaHei", 9))
         suit_label.setAlignment(Qt.AlignCenter)
-        suit_label.setStyleSheet("color: rgba(251, 191, 36, 0.7);")
+        suit_label.setStyleSheet("color: #666666; background: transparent;")
         
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
-        separator.setStyleSheet("background-color: rgba(251, 191, 36, 0.3);")
+        separator.setStyleSheet("background-color: #E0E0E0;")
+        separator.setFixedHeight(1)
         
         meaning_label = QLabel(self.card.meaning)
-        meaning_label.setFont(QFont("Segoe UI", 9))
+        meaning_label.setFont(QFont("Microsoft YaHei", 9))
         meaning_label.setWordWrap(True)
         meaning_label.setAlignment(Qt.AlignCenter)
-        meaning_label.setStyleSheet("color: #e2e8f0; line-height: 1.4;")
+        meaning_label.setStyleSheet("color: #333333; background: transparent; line-height: 1.4;")
         
         layout.addWidget(card_number)
         layout.addWidget(title_label)
@@ -182,26 +221,28 @@ class ModernCardWidget(QWidget):
         layout.addWidget(suit_label)
         layout.addWidget(separator)
         layout.addWidget(meaning_label)
+        layout.addStretch()
         
         self.setLayout(layout)
     
-    def setup_animations(self):
-        self.shadow_effect = QGraphicsDropShadowEffect()
-        self.shadow_effect.setBlurRadius(25)
-        self.shadow_effect.setColor(QColor(251, 191, 36, 100))
-        self.shadow_effect.setOffset(0, 8)
-        self.setGraphicsEffect(self.shadow_effect)
-    
     def enterEvent(self, event):
-        self.shadow_effect.setBlurRadius(40)
-        self.shadow_effect.setColor(QColor(251, 191, 36, 180))
-        self.shadow_effect.setOffset(0, 12)
+        self.setStyleSheet("""
+            ModernCardWidget {
+                background: #FFFFFF;
+                border-radius: 12px;
+                border: 2px solid #000000;
+            }
+        """)
         super().enterEvent(event)
     
     def leaveEvent(self, event):
-        self.shadow_effect.setBlurRadius(25)
-        self.shadow_effect.setColor(QColor(251, 191, 36, 100))
-        self.shadow_effect.setOffset(0, 8)
+        self.setStyleSheet("""
+            ModernCardWidget {
+                background: #FFFFFF;
+                border-radius: 12px;
+                border: 1px solid #E0E0E0;
+            }
+        """)
         super().leaveEvent(event)
 
 class ModernHistoryDialog(QDialog):
@@ -210,91 +251,90 @@ class ModernHistoryDialog(QDialog):
         self.setWindowTitle("历史记录")
         self.setGeometry(200, 200, 900, 700)
         self.setWindowFlags(Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
         
         self.history = history
         self.drag_position = None
         self.is_dragging = False
         self.init_ui()
-        self.setup_animations()
     
     def init_ui(self):
-        main_container = QWidget()
-        main_container.setStyleSheet("""
-            QWidget {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 rgba(17, 24, 39, 0.95),
-                    stop:1 rgba(31, 41, 55, 0.95));
-                border-radius: 24px;
-                border: 1px solid rgba(251, 191, 36, 0.2);
-            }
-        """)
+        self.setStyleSheet("background: #FFFFFF;")
         
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(30, 30, 30, 30)
-        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        header_layout = QHBoxLayout()
+        title_bar = QWidget()
+        title_bar.setFixedHeight(48)
+        title_bar.setStyleSheet("background: #FFFFFF; border-bottom: 1px solid #E0E0E0;")
+        
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(20, 0, 0, 0)
         
         title_label = QLabel("历史占卜记录")
-        title_label.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        title_label.setStyleSheet("color: #fbbf24;")
+        title_label.setFont(QFont("Microsoft YaHei", 12, QFont.Bold))
+        title_label.setStyleSheet("color: #000000; background: transparent;")
         
         close_btn = QPushButton("✕")
-        close_btn.setFixedSize(40, 40)
+        close_btn.setFixedSize(46, 46)
         close_btn.setStyleSheet("""
             QPushButton {
-                background: rgba(239, 68, 68, 0.2);
-                color: #ef4444;
+                background: transparent;
+                color: #000000;
                 border: none;
-                border-radius: 20px;
-                font-size: 20px;
+                font-size: 14px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background: rgba(239, 68, 68, 0.4);
+                background: #E81123;
+                color: #FFFFFF;
             }
         """)
         close_btn.clicked.connect(self.close)
         
-        header_layout.addWidget(title_label)
-        header_layout.addStretch()
-        header_layout.addWidget(close_btn)
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
+        title_layout.addWidget(close_btn)
+        title_bar.setLayout(title_layout)
+        
+        content_widget = QWidget()
+        content_widget.setStyleSheet("background: #FFFFFF;")
         
         content_layout = QHBoxLayout()
+        content_layout.setContentsMargins(20, 20, 20, 20)
         content_layout.setSpacing(20)
         
         self.history_list = QListWidget()
         self.history_list.setStyleSheet("""
             QListWidget {
-                background: rgba(17, 24, 39, 0.6);
-                border: 1px solid rgba(251, 191, 36, 0.2);
-                border-radius: 16px;
-                padding: 10px;
-                font-size: 13px;
+                background: #FAFAFA;
+                border: 1px solid #E0E0E0;
+                border-radius: 8px;
+                padding: 8px;
+                font-size: 12px;
             }
             QListWidget::item {
-                padding: 15px;
-                border-radius: 10px;
-                margin: 5px;
-                color: #e2e8f0;
-                background: rgba(251, 191, 36, 0.05);
+                padding: 12px;
+                border-radius: 6px;
+                margin: 4px;
+                color: #333333;
+                background: #FFFFFF;
+                border: 1px solid #E0E0E0;
             }
             QListWidget::item:hover {
-                background: rgba(251, 191, 36, 0.15);
+                background: #F0F0F0;
+                border: 1px solid #000000;
             }
             QListWidget::item:selected {
-                background: rgba(251, 191, 36, 0.25);
-                border: 1px solid rgba(251, 191, 36, 0.4);
-            }
-            QListWidget::item:selected:!active {
-                background: rgba(251, 191, 36, 0.2);
+                background: #000000;
+                color: #FFFFFF;
+                border: 1px solid #000000;
             }
         """)
-        self.history_list.setFixedWidth(350)
+        self.history_list.setFixedWidth(320)
         
         for i, item in enumerate(reversed(self.history)):
-            list_item = QListWidgetItem(f"📅 {item['timestamp']}\n❓ {item['question'][:35]}...")
+            list_item = QListWidgetItem(f"{item['timestamp']}\n{item['question'][:40]}...")
             list_item.setData(Qt.UserRole, i)
             self.history_list.addItem(list_item)
         
@@ -303,47 +343,47 @@ class ModernHistoryDialog(QDialog):
         detail_container = QWidget()
         detail_container.setStyleSheet("""
             QWidget {
-                background: rgba(17, 24, 39, 0.6);
-                border-radius: 16px;
-                border: 1px solid rgba(251, 191, 36, 0.2);
+                background: #FAFAFA;
+                border-radius: 8px;
+                border: 1px solid #E0E0E0;
             }
         """)
         
         detail_layout = QVBoxLayout()
         detail_layout.setContentsMargins(20, 20, 20, 20)
-        detail_layout.setSpacing(15)
+        detail_layout.setSpacing(12)
         
         section_title = QLabel("解读详情")
-        section_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
-        section_title.setStyleSheet("color: #fbbf24;")
+        section_title.setFont(QFont("Microsoft YaHei", 12, QFont.Bold))
+        section_title.setStyleSheet("color: #000000; background: transparent;")
         
         self.question_label = QLabel("问题:")
-        self.question_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
-        self.question_label.setStyleSheet("color: #fbbf24;")
+        self.question_label.setFont(QFont("Microsoft YaHei", 10, QFont.Bold))
+        self.question_label.setStyleSheet("color: #000000; background: transparent;")
         self.question_content = QLabel("")
         self.question_content.setWordWrap(True)
-        self.question_content.setStyleSheet("color: #e2e8f0; padding: 10px; background: rgba(251, 191, 36, 0.05); border-radius: 8px;")
+        self.question_content.setStyleSheet("color: #333333; padding: 10px; background: #FFFFFF; border-radius: 6px; border: 1px solid #E0E0E0;")
         
         self.cards_label = QLabel("抽取的牌:")
-        self.cards_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
-        self.cards_label.setStyleSheet("color: #fbbf24;")
+        self.cards_label.setFont(QFont("Microsoft YaHei", 10, QFont.Bold))
+        self.cards_label.setStyleSheet("color: #000000; background: transparent;")
         self.cards_content = QLabel("")
         self.cards_content.setWordWrap(True)
-        self.cards_content.setStyleSheet("color: #e2e8f0; padding: 10px; background: rgba(251, 191, 36, 0.05); border-radius: 8px;")
+        self.cards_content.setStyleSheet("color: #333333; padding: 10px; background: #FFFFFF; border-radius: 6px; border: 1px solid #E0E0E0;")
         
         self.analysis_label = QLabel("解读结果:")
-        self.analysis_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
-        self.analysis_label.setStyleSheet("color: #fbbf24;")
+        self.analysis_label.setFont(QFont("Microsoft YaHei", 10, QFont.Bold))
+        self.analysis_label.setStyleSheet("color: #000000; background: transparent;")
         self.analysis_content = QTextEdit()
         self.analysis_content.setReadOnly(True)
         self.analysis_content.setStyleSheet("""
             QTextEdit {
-                background: rgba(17, 24, 39, 0.8);
-                border: 1px solid rgba(251, 191, 36, 0.2);
-                border-radius: 12px;
-                padding: 15px;
-                color: #e2e8f0;
-                font-size: 13px;
+                background: #FFFFFF;
+                border: 1px solid #E0E0E0;
+                border-radius: 8px;
+                padding: 12px;
+                color: #333333;
+                font-size: 12px;
             }
         """)
         
@@ -359,47 +399,51 @@ class ModernHistoryDialog(QDialog):
         
         content_layout.addWidget(self.history_list)
         content_layout.addWidget(detail_container)
+        content_widget.setLayout(content_layout)
         
+        button_widget = QWidget()
+        button_widget.setStyleSheet("background: #FFFFFF;")
         button_layout = QHBoxLayout()
+        button_layout.setContentsMargins(20, 10, 20, 20)
         
-        self.delete_button = QPushButton("🗑️ 删除选中")
+        self.delete_button = QPushButton("删除选中")
+        self.delete_button.setFixedHeight(40)
         self.delete_button.setStyleSheet("""
             QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(239, 68, 68, 0.8),
-                    stop:1 rgba(220, 38, 38, 0.8));
-                color: white;
+                background: #000000;
+                color: #FFFFFF;
                 border: none;
-                border-radius: 12px;
-                padding: 12px 24px;
-                font-size: 13px;
+                border-radius: 8px;
+                padding: 0 24px;
+                font-size: 12px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(239, 68, 68, 1),
-                    stop:1 rgba(220, 38, 38, 1));
+                background: #333333;
+            }
+            QPushButton:pressed {
+                background: #666666;
             }
         """)
         self.delete_button.clicked.connect(self.delete_history_item)
         
-        self.copy_button = QPushButton("📋 复制信息")
+        self.copy_button = QPushButton("复制信息")
+        self.copy_button.setFixedHeight(40)
         self.copy_button.setStyleSheet("""
             QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(251, 191, 36, 0.8),
-                    stop:1 rgba(245, 158, 11, 0.8));
-                color: #1f2937;
-                border: none;
-                border-radius: 12px;
-                padding: 12px 24px;
-                font-size: 13px;
+                background: #FFFFFF;
+                color: #000000;
+                border: 1px solid #000000;
+                border-radius: 8px;
+                padding: 0 24px;
+                font-size: 12px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(251, 191, 36, 1),
-                    stop:1 rgba(245, 158, 11, 1));
+                background: #F0F0F0;
+            }
+            QPushButton:pressed {
+                background: #E0E0E0;
             }
         """)
         self.copy_button.clicked.connect(self.copy_history_info)
@@ -407,25 +451,13 @@ class ModernHistoryDialog(QDialog):
         button_layout.addWidget(self.delete_button)
         button_layout.addWidget(self.copy_button)
         button_layout.addStretch()
+        button_widget.setLayout(button_layout)
         
-        main_layout.addLayout(header_layout)
-        main_layout.addLayout(content_layout)
-        main_layout.addLayout(button_layout)
+        main_layout.addWidget(title_bar)
+        main_layout.addWidget(content_widget)
+        main_layout.addWidget(button_widget)
         
-        main_container.setLayout(main_layout)
-        
-        dialog_layout = QVBoxLayout()
-        dialog_layout.setContentsMargins(0, 0, 0, 0)
-        dialog_layout.addWidget(main_container)
-        
-        self.setLayout(dialog_layout)
-    
-    def setup_animations(self):
-        self.shadow_effect = QGraphicsDropShadowEffect()
-        self.shadow_effect.setBlurRadius(50)
-        self.shadow_effect.setColor(QColor(0, 0, 0, 150))
-        self.shadow_effect.setOffset(0, 10)
-        self.setGraphicsEffect(self.shadow_effect)
+        self.setLayout(main_layout)
     
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -436,7 +468,6 @@ class ModernHistoryDialog(QDialog):
             
             self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
             self.is_dragging = True
-            self.setCursor(Qt.ClosedHandCursor)
             event.accept()
     
     def mouseMoveEvent(self, event):
@@ -461,7 +492,6 @@ class ModernHistoryDialog(QDialog):
         if event.button() == Qt.LeftButton:
             self.is_dragging = False
             self.drag_position = None
-            self.setCursor(Qt.ArrowCursor)
             event.accept()
     
     def on_history_item_clicked(self, item):
@@ -487,7 +517,7 @@ class ModernHistoryDialog(QDialog):
         
         self.history_list.clear()
         for i, item in enumerate(reversed(self.history)):
-            list_item = QListWidgetItem(f"📅 {item['timestamp']}\n❓ {item['question'][:35]}...")
+            list_item = QListWidgetItem(f"{item['timestamp']}\n{item['question'][:40]}...")
             list_item.setData(Qt.UserRole, i)
             self.history_list.addItem(list_item)
         
@@ -522,46 +552,37 @@ class ModernAIAnalysisWidget(QWidget):
         super().__init__(parent)
         self.setStyleSheet("""
             QWidget {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 rgba(45, 27, 78, 0.7),
-                    stop:1 rgba(76, 29, 149, 0.7));
-                border-radius: 20px;
-                border: 2px solid rgba(251, 191, 36, 0.3);
+                background: #FAFAFA;
+                border-radius: 12px;
+                border: 1px solid #E0E0E0;
             }
         """)
         
         layout = QVBoxLayout()
-        layout.setContentsMargins(25, 25, 25, 25)
-        layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(12)
         
         header_layout = QHBoxLayout()
         
-        icon_label = QLabel("✨")
-        icon_label.setFont(QFont("Segoe UI", 24))
-        
         title_label = QLabel("AI 智慧解读")
-        title_font = QFont("Segoe UI", 16, QFont.Bold)
+        title_font = QFont("Microsoft YaHei", 12, QFont.Bold)
         title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #fbbf24;")
+        title_label.setStyleSheet("color: #000000; background: transparent;")
         
-        header_layout.addWidget(icon_label)
         header_layout.addWidget(title_label)
         header_layout.addStretch()
         
         self.analysis_text = QTextEdit()
         self.analysis_text.setReadOnly(True)
-        self.analysis_text.setFont(QFont("Segoe UI", 11))
+        self.analysis_text.setFont(QFont("Microsoft YaHei", 11))
         self.analysis_text.setStyleSheet("""
             QTextEdit {
-                background: rgba(17, 24, 39, 0.6);
-                border: 1px solid rgba(251, 191, 36, 0.2);
-                border-radius: 16px;
-                padding: 20px;
-                color: #e2e8f0;
+                background: #FFFFFF;
+                border: 1px solid #E0E0E0;
+                border-radius: 8px;
+                padding: 16px;
+                color: #333333;
                 line-height: 1.6;
-            }
-            QTextEdit:focus {
-                border: 1px solid rgba(251, 191, 36, 0.5);
             }
         """)
         
@@ -572,7 +593,7 @@ class ModernAIAnalysisWidget(QWidget):
         self.worker = None
     
     def set_analysis(self, question, cards, callback=None):
-        self.analysis_text.setText("🔮 正在连接宇宙能量，生成AI解读，请稍候...")
+        self.analysis_text.setText("正在连接AI，生成解读，请稍候...")
         self.callback = callback
         
         if self.worker and self.worker.isRunning():
@@ -595,7 +616,7 @@ class ModernAIAnalysisWidget(QWidget):
             self.callback(analysis, None)
     
     def on_analysis_error(self, error_message):
-        self.analysis_text.setText(f"❌ {error_message}")
+        self.analysis_text.setText(f"错误: {error_message}")
         if hasattr(self, 'callback') and self.callback:
             self.callback(None, error_message)
 
@@ -605,10 +626,8 @@ class ModernTarotApp(QMainWindow):
         self.setWindowTitle("AI 塔罗牌占卜")
         self.setGeometry(100, 100, 1200, 900)
         self.setWindowFlags(Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
         
         self.init_ui()
-        self.setup_animations()
         
         self.deck = TarotDeck()
         self.drawn_cards = []
@@ -640,40 +659,36 @@ class ModernTarotApp(QMainWindow):
         main_container = QWidget()
         main_container.setStyleSheet("""
             QWidget {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 rgba(17, 24, 39, 0.98),
-                    stop:0.5 rgba(31, 41, 55, 0.98),
-                    stop:1 rgba(17, 24, 39, 0.98));
-                border-radius: 24px;
-                border: 1px solid rgba(251, 191, 36, 0.2);
+                background: #FFFFFF;
             }
         """)
         
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(30, 30, 30, 30)
-        main_layout.setSpacing(25)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
         title_bar = self.create_title_bar()
         
-        header_layout = QVBoxLayout()
-        header_layout.setSpacing(10)
+        content_widget = QWidget()
+        content_widget.setStyleSheet("background: #FFFFFF;")
         
-        title_label = QLabel("✨ AI 塔罗牌占卜 ✨")
-        title_font = QFont("Segoe UI", 28, QFont.Bold)
+        content_layout = QVBoxLayout()
+        content_layout.setContentsMargins(40, 30, 40, 40)
+        content_layout.setSpacing(24)
+        
+        header_layout = QVBoxLayout()
+        header_layout.setSpacing(8)
+        
+        title_label = QLabel("AI 塔罗牌占卜")
+        title_font = QFont("Microsoft YaHei", 24, QFont.Bold)
         title_label.setFont(title_font)
-        title_label.setStyleSheet("""
-            color: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                stop:0 #fbbf24,
-                stop:0.5 #f59e0b,
-                stop:1 #fbbf24);
-            background: transparent;
-        """)
+        title_label.setStyleSheet("color: #000000; background: transparent;")
         title_label.setAlignment(Qt.AlignCenter)
         
-        subtitle_label = QLabel("🔮 输入您的问题，让塔罗牌揭示宇宙的智慧")
-        subtitle_font = QFont("Segoe UI", 13)
+        subtitle_label = QLabel("输入您的问题，让塔罗牌揭示宇宙的智慧")
+        subtitle_font = QFont("Microsoft YaHei", 11)
         subtitle_label.setFont(subtitle_font)
-        subtitle_label.setStyleSheet("color: rgba(251, 191, 36, 0.7);")
+        subtitle_label.setStyleSheet("color: #666666; background: transparent;")
         subtitle_label.setAlignment(Qt.AlignCenter)
         
         header_layout.addWidget(title_label)
@@ -682,100 +697,92 @@ class ModernTarotApp(QMainWindow):
         question_group = QGroupBox()
         question_group.setStyleSheet("""
             QGroupBox {
-                background: rgba(17, 24, 39, 0.6);
-                border: 2px solid rgba(251, 191, 36, 0.3);
-                border-radius: 20px;
-                margin-top: 10px;
-                font-size: 14px;
-                font-weight: bold;
-                color: #fbbf24;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 20px;
-                padding: 0 10px;
+                background: #FAFAFA;
+                border: 1px solid #E0E0E0;
+                border-radius: 12px;
+                margin-top: 0;
+                padding-top: 0;
             }
         """)
-        question_group.setTitle("🤔 您的问题")
         
         question_layout = QVBoxLayout()
-        question_layout.setContentsMargins(20, 25, 20, 20)
+        question_layout.setContentsMargins(20, 20, 20, 20)
+        
+        question_title = QLabel("您的问题")
+        question_title.setFont(QFont("Microsoft YaHei", 11, QFont.Bold))
+        question_title.setStyleSheet("color: #000000; background: transparent;")
         
         self.question_input = QLineEdit()
         self.question_input.setPlaceholderText("请输入您想询问的问题...")
         self.question_input.setStyleSheet("""
             QLineEdit {
-                background: rgba(17, 24, 39, 0.8);
-                border: 2px solid rgba(251, 191, 36, 0.3);
-                border-radius: 16px;
-                padding: 16px 20px;
-                font-size: 14px;
-                color: #e2e8f0;
+                background: #FFFFFF;
+                border: 1px solid #E0E0E0;
+                border-radius: 8px;
+                padding: 14px 16px;
+                font-size: 13px;
+                color: #333333;
             }
             QLineEdit:focus {
-                border: 2px solid rgba(251, 191, 36, 0.8);
-                background: rgba(17, 24, 39, 0.9);
+                border: 2px solid #000000;
             }
             QLineEdit::placeholder {
-                color: rgba(251, 191, 36, 0.4);
+                color: #999999;
             }
         """)
-        self.question_input.setMinimumHeight(50)
+        self.question_input.setMinimumHeight(48)
         
+        question_layout.addWidget(question_title)
         question_layout.addWidget(self.question_input)
         question_group.setLayout(question_layout)
         
         control_layout = QHBoxLayout()
-        control_layout.setSpacing(15)
+        control_layout.setSpacing(12)
         
-        self.history_button = QPushButton("📜 历史记录")
-        self.history_button.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        self.history_button = QPushButton("历史记录")
+        self.history_button.setFixedHeight(44)
+        self.history_button.setFont(QFont("Microsoft YaHei", 11))
         self.history_button.setStyleSheet("""
             QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(76, 29, 149, 0.8),
-                    stop:1 rgba(107, 33, 168, 0.8));
-                color: white;
-                border: none;
-                border-radius: 14px;
-                padding: 14px 28px;
+                background: #FFFFFF;
+                color: #000000;
+                border: 1px solid #000000;
+                border-radius: 8px;
+                padding: 0 20px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(76, 29, 149, 1),
-                    stop:1 rgba(107, 33, 168, 1));
+                background: #F0F0F0;
             }
             QPushButton:pressed {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(76, 29, 149, 0.6),
-                    stop:1 rgba(107, 33, 168, 0.6));
+                background: #E0E0E0;
             }
         """)
         self.history_button.clicked.connect(self.show_history)
         self.history_button.setCursor(Qt.PointingHandCursor)
         
-        self.copy_button = QPushButton("📋 复制牌面")
-        self.copy_button.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        self.copy_button = QPushButton("复制牌面")
+        self.copy_button.setFixedHeight(44)
+        self.copy_button.setFont(QFont("Microsoft YaHei", 11))
         self.copy_button.setStyleSheet("""
             QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(76, 29, 149, 0.8),
-                    stop:1 rgba(107, 33, 168, 0.8));
-                color: white;
-                border: none;
-                border-radius: 14px;
-                padding: 14px 28px;
+                background: #FFFFFF;
+                color: #000000;
+                border: 1px solid #000000;
+                border-radius: 8px;
+                padding: 0 20px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(76, 29, 149, 1),
-                    stop:1 rgba(107, 33, 168, 1));
+                background: #F0F0F0;
+            }
+            QPushButton:pressed {
+                background: #E0E0E0;
             }
             QPushButton:disabled {
-                background: rgba(75, 85, 99, 0.5);
-                color: rgba(229, 231, 235, 0.5);
+                background: #F5F5F5;
+                color: #CCCCCC;
+                border: 1px solid #E0E0E0;
             }
         """)
         self.copy_button.clicked.connect(self.copy_cards_info)
@@ -785,58 +792,58 @@ class ModernTarotApp(QMainWindow):
         count_container = QWidget()
         count_container.setStyleSheet("""
             QWidget {
-                background: rgba(17, 24, 39, 0.6);
-                border-radius: 14px;
-                border: 1px solid rgba(251, 191, 36, 0.3);
+                background: #FAFAFA;
+                border-radius: 8px;
+                border: 1px solid #E0E0E0;
             }
         """)
         count_layout = QHBoxLayout()
-        count_layout.setContentsMargins(15, 12, 15, 12)
+        count_layout.setContentsMargins(16, 0, 16, 0)
         count_layout.setSpacing(10)
         
         count_label = QLabel("抽牌数量:")
-        count_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
-        count_label.setStyleSheet("color: #fbbf24;")
+        count_label.setFont(QFont("Microsoft YaHei", 11))
+        count_label.setStyleSheet("color: #000000; background: transparent;")
         
         self.card_count = QComboBox()
         self.card_count.setStyleSheet("""
             QComboBox {
-                background: rgba(17, 24, 39, 0.8);
-                border: 2px solid rgba(251, 191, 36, 0.3);
-                border-radius: 10px;
-                padding: 8px 15px;
-                font-size: 13px;
-                color: #e2e8f0;
-                min-width: 80px;
+                background: #FFFFFF;
+                border: 1px solid #E0E0E0;
+                border-radius: 6px;
+                padding: 8px 12px;
+                font-size: 12px;
+                color: #333333;
+                min-width: 60px;
             }
             QComboBox:focus {
-                border: 2px solid rgba(251, 191, 36, 0.8);
+                border: 2px solid #000000;
             }
             QComboBox::drop-down {
                 border: none;
-                width: 30px;
+                width: 24px;
             }
             QComboBox::down-arrow {
                 image: none;
                 border-left: 5px solid transparent;
                 border-right: 5px solid transparent;
-                border-top: 6px solid #fbbf24;
+                border-top: 6px solid #000000;
             }
             QComboBox QAbstractItemView {
-                background: rgba(17, 24, 39, 0.95);
-                border: 2px solid rgba(251, 191, 36, 0.3);
-                border-radius: 10px;
-                selection-background-color: rgba(251, 191, 36, 0.3);
-                selection-color: #fbbf24;
-                padding: 5px;
+                background: #FFFFFF;
+                border: 1px solid #E0E0E0;
+                border-radius: 6px;
+                selection-background-color: #000000;
+                selection-color: #FFFFFF;
+                padding: 4px;
             }
             QComboBox QAbstractItemView::item {
-                padding: 8px 15px;
-                color: #e2e8f0;
-                border-radius: 5px;
+                padding: 8px 12px;
+                color: #333333;
+                border-radius: 4px;
             }
             QComboBox QAbstractItemView::item:hover {
-                background: rgba(251, 191, 36, 0.2);
+                background: #F0F0F0;
             }
         """)
         
@@ -855,32 +862,25 @@ class ModernTarotApp(QMainWindow):
         count_layout.addWidget(count_label)
         count_layout.addWidget(self.card_count)
         count_container.setLayout(count_layout)
+        count_container.setFixedHeight(44)
         
-        self.draw_button = QPushButton("🎴 抽取塔罗牌")
-        self.draw_button.setFont(QFont("Segoe UI", 13, QFont.Bold))
+        self.draw_button = QPushButton("抽取塔罗牌")
+        self.draw_button.setFixedHeight(44)
+        self.draw_button.setFont(QFont("Microsoft YaHei", 11, QFont.Bold))
         self.draw_button.setStyleSheet("""
             QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(251, 191, 36, 0.9),
-                    stop:0.5 rgba(245, 158, 11, 0.9),
-                    stop:1 rgba(251, 191, 36, 0.9));
-                color: #1f2937;
+                background: #000000;
+                color: #FFFFFF;
                 border: none;
-                border-radius: 14px;
-                padding: 14px 32px;
+                border-radius: 8px;
+                padding: 0 28px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(251, 191, 36, 1),
-                    stop:0.5 rgba(245, 158, 11, 1),
-                    stop:1 rgba(251, 191, 36, 1));
+                background: #333333;
             }
             QPushButton:pressed {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(251, 191, 36, 0.7),
-                    stop:0.5 rgba(245, 158, 11, 0.7),
-                    stop:1 rgba(251, 191, 36, 0.7));
+                background: #666666;
             }
         """)
         self.draw_button.clicked.connect(self.draw_cards)
@@ -891,9 +891,9 @@ class ModernTarotApp(QMainWindow):
         control_layout.addWidget(count_container)
         control_layout.addWidget(self.draw_button)
         
-        cards_label = QLabel("🎴 抽取的塔罗牌")
-        cards_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
-        cards_label.setStyleSheet("color: #fbbf24;")
+        cards_label = QLabel("抽取的塔罗牌")
+        cards_label.setFont(QFont("Microsoft YaHei", 12, QFont.Bold))
+        cards_label.setStyleSheet("color: #000000; background: transparent;")
         
         self.cards_scroll = QScrollArea()
         self.cards_scroll.setWidgetResizable(True)
@@ -903,33 +903,33 @@ class ModernTarotApp(QMainWindow):
                 background: transparent;
             }
             QScrollBar:vertical {
-                background: rgba(17, 24, 39, 0.5);
-                width: 12px;
-                border-radius: 6px;
+                background: #F5F5F5;
+                width: 8px;
+                border-radius: 4px;
             }
             QScrollBar::handle:vertical {
-                background: rgba(251, 191, 36, 0.4);
-                border-radius: 6px;
+                background: #CCCCCC;
+                border-radius: 4px;
                 min-height: 30px;
             }
             QScrollBar::handle:vertical:hover {
-                background: rgba(251, 191, 36, 0.6);
+                background: #999999;
             }
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
                 height: 0px;
             }
             QScrollBar:horizontal {
-                background: rgba(17, 24, 39, 0.5);
-                height: 12px;
-                border-radius: 6px;
+                background: #F5F5F5;
+                height: 8px;
+                border-radius: 4px;
             }
             QScrollBar::handle:horizontal {
-                background: rgba(251, 191, 36, 0.4);
-                border-radius: 6px;
+                background: #CCCCCC;
+                border-radius: 4px;
                 min-width: 30px;
             }
             QScrollBar::handle:horizontal:hover {
-                background: rgba(251, 191, 36, 0.6);
+                background: #999999;
             }
             QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
                 width: 0px;
@@ -937,36 +937,35 @@ class ModernTarotApp(QMainWindow):
         """)
         
         self.cards_container = QWidget()
+        self.cards_container.setStyleSheet("background: transparent;")
         self.cards_layout = QHBoxLayout()
         self.cards_layout.setContentsMargins(10, 10, 10, 10)
-        self.cards_layout.setSpacing(25)
+        self.cards_layout.setSpacing(20)
+        self.cards_layout.addStretch()
         self.cards_container.setLayout(self.cards_layout)
         self.cards_scroll.setWidget(self.cards_container)
-        self.cards_scroll.setMinimumHeight(360)
+        self.cards_scroll.setMinimumHeight(320)
         
         self.analysis_widget = ModernAIAnalysisWidget()
-        self.analysis_widget.setMinimumHeight(280)
+        self.analysis_widget.setMinimumHeight(240)
+        
+        content_layout.addLayout(header_layout)
+        content_layout.addWidget(question_group)
+        content_layout.addLayout(control_layout)
+        content_layout.addWidget(cards_label)
+        content_layout.addWidget(self.cards_scroll)
+        content_layout.addWidget(self.analysis_widget)
+        
+        content_widget.setLayout(content_layout)
         
         main_layout.addWidget(title_bar)
-        main_layout.addLayout(header_layout)
-        main_layout.addWidget(question_group)
-        main_layout.addLayout(control_layout)
-        main_layout.addWidget(cards_label)
-        main_layout.addWidget(self.cards_scroll)
-        main_layout.addWidget(self.analysis_widget)
+        main_layout.addWidget(content_widget)
         
         main_container.setLayout(main_layout)
         self.setCentralWidget(main_container)
     
     def create_title_bar(self):
         return DraggableTitleBar(self)
-    
-    def setup_animations(self):
-        self.shadow_effect = QGraphicsDropShadowEffect()
-        self.shadow_effect.setBlurRadius(60)
-        self.shadow_effect.setColor(QColor(0, 0, 0, 200))
-        self.shadow_effect.setOffset(0, 15)
-        self.centralWidget().setGraphicsEffect(self.shadow_effect)
     
     def copy_cards_info(self):
         question = self.question_input.text().strip()
@@ -981,20 +980,22 @@ class ModernTarotApp(QMainWindow):
     def draw_cards(self):
         question = self.question_input.text().strip()
         if not question:
-            self.question_input.setPlaceholderText("⚠️ 请先输入您的问题...")
+            self.question_input.setPlaceholderText("请先输入您的问题...")
             return
         
         num_cards = int(self.card_count.currentText())
         
-        for i in reversed(range(self.cards_layout.count())): 
-            self.cards_layout.itemAt(i).widget().setParent(None)
+        while self.cards_layout.count() > 1:
+            item = self.cards_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
         
         self.deck = TarotDeck()
         self.drawn_cards = self.deck.draw(num_cards)
         
         for i, card in enumerate(self.drawn_cards, 1):
             card_widget = ModernCardWidget(card, i)
-            self.cards_layout.addWidget(card_widget)
+            self.cards_layout.insertWidget(self.cards_layout.count() - 1, card_widget)
         
         self.copy_button.setEnabled(True)
         
