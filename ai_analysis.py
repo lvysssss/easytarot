@@ -64,6 +64,8 @@ class AIAnalysisWorker(QThread):
             )
 
             for chunk in response:
+                if not chunk.choices:
+                    continue
                 delta = chunk.choices[0].delta
                 if delta and delta.content:
                     partial_text += delta.content
