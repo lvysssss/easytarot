@@ -28,6 +28,10 @@ from gui.styles import (
     COMBOBOX_STYLE,
     SCROLL_BAR_STYLE,
     GROUP_BOX_STYLE,
+    MAIN_BACKGROUND,
+    CONTENT_BACKGROUND,
+    BLACK,
+    GRAY_TEXT,
 )
 
 
@@ -90,10 +94,10 @@ class ModernTarotApp(QMainWindow):
     def init_ui(self):
         """初始化UI界面"""
         main_container = QWidget()
-        main_container.setStyleSheet("""
-            QWidget {
-                background: #FFFFFF;
-            }
+        main_container.setStyleSheet(f"""
+            QWidget {{
+                background: {MAIN_BACKGROUND};
+            }}
         """)
 
         main_layout = QVBoxLayout()
@@ -103,7 +107,7 @@ class ModernTarotApp(QMainWindow):
         title_bar = self.create_title_bar()
 
         content_widget = QWidget()
-        content_widget.setStyleSheet("background: #FFFFFF;")
+        content_widget.setStyleSheet(f"background: {CONTENT_BACKGROUND};")
 
         content_layout = QVBoxLayout()
         content_layout.setContentsMargins(40, 30, 40, 40)
@@ -116,13 +120,13 @@ class ModernTarotApp(QMainWindow):
         title_label = QLabel("AI 塔罗牌占卜")
         title_font = QFont("Microsoft YaHei", 24, QFont.Bold)
         title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #000000; background: transparent;")
+        title_label.setStyleSheet(f"color: {BLACK}; background: transparent;")
         title_label.setAlignment(Qt.AlignCenter)
 
         subtitle_label = QLabel("输入您的问题，让塔罗牌揭示宇宙的智慧")
         subtitle_font = QFont("Microsoft YaHei", 11)
         subtitle_label.setFont(subtitle_font)
-        subtitle_label.setStyleSheet("color: #666666; background: transparent;")
+        subtitle_label.setStyleSheet(f"color: {GRAY_TEXT}; background: transparent;")
         subtitle_label.setAlignment(Qt.AlignCenter)
 
         header_layout.addWidget(title_label)
@@ -137,7 +141,7 @@ class ModernTarotApp(QMainWindow):
 
         question_title = QLabel("您的问题")
         question_title.setFont(QFont("Microsoft YaHei", 11, QFont.Bold))
-        question_title.setStyleSheet("color: #000000; background: transparent;")
+        question_title.setStyleSheet(f"color: {BLACK}; background: transparent;")
 
         self.question_input = QLineEdit()
         self.question_input.setPlaceholderText("请输入您想询问的问题...")
@@ -182,7 +186,7 @@ class ModernTarotApp(QMainWindow):
 
         count_label = QLabel("抽牌数量:")
         count_label.setFont(QFont("Microsoft YaHei", 11))
-        count_label.setStyleSheet("color: #000000; background: transparent;")
+        count_label.setStyleSheet(f"color: {BLACK}; background: transparent;")
 
         self.card_count = QComboBox()
         self.card_count.setStyleSheet(COMBOBOX_STYLE)
@@ -219,7 +223,7 @@ class ModernTarotApp(QMainWindow):
         # 卡牌展示区
         cards_label = QLabel("抽取的塔罗牌")
         cards_label.setFont(QFont("Microsoft YaHei", 12, QFont.Bold))
-        cards_label.setStyleSheet("color: #000000; background: transparent;")
+        cards_label.setStyleSheet(f"color: {BLACK}; background: transparent;")
 
         self.cards_scroll = QScrollArea()
         self.cards_scroll.setWidgetResizable(True)

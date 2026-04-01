@@ -7,6 +7,16 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QFrame
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 
+from gui.styles import (
+    WHITE,
+    BLACK,
+    GRAY_BORDER,
+    GRAY_TEXT,
+    GRAY_PLACEHOLDER,
+    GRAY_CONTENT,
+    ACCENT_COLOR,
+)
+
 
 class ModernCardWidget(QWidget):
     """塔罗牌卡片展示组件"""
@@ -22,15 +32,15 @@ class ModernCardWidget(QWidget):
         self.setup_ui()
 
     def setup_ui(self):
-        self.setStyleSheet("""
-            ModernCardWidget {
-                background: #FFFFFF;
+        self.setStyleSheet(f"""
+            ModernCardWidget {{
+                background: {WHITE};
                 border-radius: 12px;
-                border: 1px solid #E0E0E0;
-            }
-            ModernCardWidget:hover {
-                border: 2px solid #000000;
-            }
+                border: 1px solid {GRAY_BORDER};
+            }}
+            ModernCardWidget:hover {{
+                border: 2px solid {BLACK};
+            }}
         """)
 
         layout = QVBoxLayout()
@@ -39,14 +49,14 @@ class ModernCardWidget(QWidget):
 
         card_number = QLabel(f"#{self.index}")
         card_number.setFont(QFont("Microsoft YaHei", 10))
-        card_number.setStyleSheet("color: #999999; background: transparent;")
+        card_number.setStyleSheet(f"color: {GRAY_PLACEHOLDER}; background: transparent;")
         card_number.setAlignment(Qt.AlignRight)
 
         title_label = QLabel(self.card.name)
         title_font = QFont("Microsoft YaHei", 12, QFont.Bold)
         title_label.setFont(title_font)
         title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("color: #000000; background: transparent;")
+        title_label.setStyleSheet(f"color: {BLACK}; background: transparent;")
         title_label.setWordWrap(True)
 
         orientation_label = QLabel(self.card.orientation)
@@ -56,21 +66,21 @@ class ModernCardWidget(QWidget):
 
         if self.card.orientation == "正位":
             orientation_label.setStyleSheet(
-                "color: #FFFFFF; padding: 6px 16px; background: #000000; border-radius: 16px;"
+                f"color: {WHITE}; padding: 6px 16px; background: {BLACK}; border-radius: 16px;"
             )
         else:
             orientation_label.setStyleSheet(
-                "color: #FFFFFF; padding: 6px 16px; background: #333333; border-radius: 16px;"
+                f"color: {WHITE}; padding: 6px 16px; background: {ACCENT_COLOR}; border-radius: 16px;"
             )
 
         suit_label = QLabel(f"花色: {self.card.suit if self.card.suit else '大阿卡纳'}")
         suit_label.setFont(QFont("Microsoft YaHei", 9))
         suit_label.setAlignment(Qt.AlignCenter)
-        suit_label.setStyleSheet("color: #666666; background: transparent;")
+        suit_label.setStyleSheet(f"color: {GRAY_TEXT}; background: transparent;")
 
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
-        separator.setStyleSheet("background-color: #E0E0E0;")
+        separator.setStyleSheet(f"background-color: {GRAY_BORDER};")
         separator.setFixedHeight(1)
 
         meaning_label = QLabel(self.card.meaning)
@@ -78,7 +88,7 @@ class ModernCardWidget(QWidget):
         meaning_label.setWordWrap(True)
         meaning_label.setAlignment(Qt.AlignCenter)
         meaning_label.setStyleSheet(
-            "color: #333333; background: transparent; line-height: 1.4;"
+            f"color: {GRAY_CONTENT}; background: transparent; line-height: 1.4;"
         )
 
         layout.addWidget(card_number)
@@ -92,21 +102,21 @@ class ModernCardWidget(QWidget):
         self.setLayout(layout)
 
     def enterEvent(self, event):
-        self.setStyleSheet("""
-            ModernCardWidget {
-                background: #FFFFFF;
+        self.setStyleSheet(f"""
+            ModernCardWidget {{
+                background: {WHITE};
                 border-radius: 12px;
-                border: 2px solid #000000;
-            }
+                border: 2px solid {BLACK};
+            }}
         """)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
-        self.setStyleSheet("""
-            ModernCardWidget {
-                background: #FFFFFF;
+        self.setStyleSheet(f"""
+            ModernCardWidget {{
+                background: {WHITE};
                 border-radius: 12px;
-                border: 1px solid #E0E0E0;
-            }
+                border: 1px solid {GRAY_BORDER};
+            }}
         """)
         super().leaveEvent(event)

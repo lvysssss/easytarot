@@ -8,6 +8,7 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 
 from ai_analysis import AIAnalysisWorker
+from gui.styles import BLACK, WHITE, GRAY_BORDER, GRAY_CONTENT, GRAY_LIGHT
 
 
 class ModernAIAnalysisWidget(QWidget):
@@ -15,12 +16,12 @@ class ModernAIAnalysisWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setStyleSheet("""
-            QWidget {
-                background: #FAFAFA;
+        self.setStyleSheet(f"""
+            QWidget {{
+                background: {GRAY_LIGHT};
                 border-radius: 12px;
-                border: 1px solid #E0E0E0;
-            }
+                border: 1px solid {GRAY_BORDER};
+            }}
         """)
 
         layout = QVBoxLayout()
@@ -32,7 +33,7 @@ class ModernAIAnalysisWidget(QWidget):
         title_label = QLabel("AI 智慧解读")
         title_font = QFont("Microsoft YaHei", 12, QFont.Bold)
         title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #000000; background: transparent;")
+        title_label.setStyleSheet(f"color: {BLACK}; background: transparent;")
 
         header_layout.addWidget(title_label)
         header_layout.addStretch()
@@ -40,15 +41,15 @@ class ModernAIAnalysisWidget(QWidget):
         self.analysis_text = QTextEdit()
         self.analysis_text.setReadOnly(True)
         self.analysis_text.setFont(QFont("Microsoft YaHei", 11))
-        self.analysis_text.setStyleSheet("""
-            QTextEdit {
-                background: #FFFFFF;
-                border: 1px solid #E0E0E0;
+        self.analysis_text.setStyleSheet(f"""
+            QTextEdit {{
+                background: {WHITE};
+                border: 1px solid {GRAY_BORDER};
                 border-radius: 8px;
                 padding: 16px;
-                color: #333333;
+                color: {GRAY_CONTENT};
                 line-height: 1.6;
-            }
+            }}
         """)
 
         layout.addLayout(header_layout)

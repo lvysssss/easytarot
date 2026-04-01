@@ -11,7 +11,19 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, QPoint, QRect
 
-from gui.styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, CLOSE_BUTTON_STYLE, LIST_WIDGET_STYLE
+from gui.styles import (
+    PRIMARY_BUTTON_STYLE,
+    SECONDARY_BUTTON_STYLE,
+    CLOSE_BUTTON_STYLE,
+    LIST_WIDGET_STYLE,
+    BLACK,
+    WHITE,
+    GRAY_BORDER,
+    GRAY_TEXT,
+    GRAY_CONTENT,
+    GRAY_LIGHT,
+    GRAY_HOVER,
+)
 
 
 class ModernHistoryDialog(QDialog):
@@ -44,7 +56,7 @@ class ModernHistoryDialog(QDialog):
         self.init_ui()
 
     def init_ui(self):
-        self.setStyleSheet("background: #FFFFFF;")
+        self.setStyleSheet(f"background: {WHITE};")
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -53,14 +65,14 @@ class ModernHistoryDialog(QDialog):
         # 标题栏
         title_bar = QWidget()
         title_bar.setFixedHeight(48)
-        title_bar.setStyleSheet("background: #FFFFFF; border-bottom: 1px solid #E0E0E0;")
+        title_bar.setStyleSheet(f"background: {GRAY_LIGHT}; border-bottom: 1px solid {GRAY_BORDER};")
 
         title_layout = QHBoxLayout()
         title_layout.setContentsMargins(20, 0, 0, 0)
 
         title_label = QLabel("历史占卜记录")
         title_label.setFont(QFont("Microsoft YaHei", 12, QFont.Bold))
-        title_label.setStyleSheet("color: #000000; background: transparent;")
+        title_label.setStyleSheet(f"color: {BLACK}; background: transparent;")
 
         close_btn = QPushButton("✕")
         close_btn.setFixedSize(46, 46)
@@ -74,7 +86,7 @@ class ModernHistoryDialog(QDialog):
 
         # 内容区域
         content_widget = QWidget()
-        content_widget.setStyleSheet("background: #FFFFFF;")
+        content_widget.setStyleSheet(f"background: {WHITE};")
 
         content_layout = QHBoxLayout()
         content_layout.setContentsMargins(20, 20, 20, 20)
@@ -94,12 +106,12 @@ class ModernHistoryDialog(QDialog):
 
         # 详情容器
         detail_container = QWidget()
-        detail_container.setStyleSheet("""
-            QWidget {
-                background: #FAFAFA;
+        detail_container.setStyleSheet(f"""
+            QWidget {{
+                background: {GRAY_LIGHT};
                 border-radius: 8px;
-                border: 1px solid #E0E0E0;
-            }
+                border: 1px solid {GRAY_BORDER};
+            }}
         """)
 
         detail_layout = QVBoxLayout()
@@ -108,42 +120,42 @@ class ModernHistoryDialog(QDialog):
 
         section_title = QLabel("解读详情")
         section_title.setFont(QFont("Microsoft YaHei", 12, QFont.Bold))
-        section_title.setStyleSheet("color: #000000; background: transparent;")
+        section_title.setStyleSheet(f"color: {BLACK}; background: transparent;")
 
         self.question_label = QLabel("问题:")
         self.question_label.setFont(QFont("Microsoft YaHei", 10, QFont.Bold))
-        self.question_label.setStyleSheet("color: #000000; background: transparent;")
+        self.question_label.setStyleSheet(f"color: {BLACK}; background: transparent;")
         self.question_content = QLabel("")
         self.question_content.setWordWrap(True)
         self.question_content.setStyleSheet(
-            "color: #333333; padding: 10px; background: #FFFFFF; "
-            "border-radius: 6px; border: 1px solid #E0E0E0;"
+            f"color: {GRAY_CONTENT}; padding: 10px; background: {WHITE}; "
+            f"border-radius: 6px; border: 1px solid {GRAY_BORDER};"
         )
 
         self.cards_label = QLabel("抽取的牌:")
         self.cards_label.setFont(QFont("Microsoft YaHei", 10, QFont.Bold))
-        self.cards_label.setStyleSheet("color: #000000; background: transparent;")
+        self.cards_label.setStyleSheet(f"color: {BLACK}; background: transparent;")
         self.cards_content = QLabel("")
         self.cards_content.setWordWrap(True)
         self.cards_content.setStyleSheet(
-            "color: #333333; padding: 10px; background: #FFFFFF; "
-            "border-radius: 6px; border: 1px solid #E0E0E0;"
+            f"color: {GRAY_CONTENT}; padding: 10px; background: {WHITE}; "
+            f"border-radius: 6px; border: 1px solid {GRAY_BORDER};"
         )
 
         self.analysis_label = QLabel("解读结果:")
         self.analysis_label.setFont(QFont("Microsoft YaHei", 10, QFont.Bold))
-        self.analysis_label.setStyleSheet("color: #000000; background: transparent;")
+        self.analysis_label.setStyleSheet(f"color: {BLACK}; background: transparent;")
         self.analysis_content = QTextEdit()
         self.analysis_content.setReadOnly(True)
-        self.analysis_content.setStyleSheet("""
-            QTextEdit {
-                background: #FFFFFF;
-                border: 1px solid #E0E0E0;
+        self.analysis_content.setStyleSheet(f"""
+            QTextEdit {{
+                background: {WHITE};
+                border: 1px solid {GRAY_BORDER};
                 border-radius: 8px;
                 padding: 12px;
-                color: #333333;
+                color: {GRAY_CONTENT};
                 font-size: 12px;
-            }
+            }}
         """)
 
         detail_layout.addWidget(section_title)
@@ -162,7 +174,7 @@ class ModernHistoryDialog(QDialog):
 
         # 按钮区域
         button_widget = QWidget()
-        button_widget.setStyleSheet("background: #FFFFFF;")
+        button_widget.setStyleSheet(f"background: {WHITE};")
         button_layout = QHBoxLayout()
         button_layout.setContentsMargins(20, 10, 20, 20)
 

@@ -7,22 +7,20 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QPushButton, QApplicat
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 
-from gui.styles import TITLE_BAR_BUTTON_STYLE, CLOSE_BUTTON_STYLE
+from gui.styles import TITLE_BAR_BUTTON_STYLE, CLOSE_BUTTON_STYLE, TITLE_BAR_STYLE
 
 
 class DraggableTitleBar(QWidget):
     """可拖拽的自定义标题栏"""
 
+    # 边框调整区域宽度（与主窗口一致）
+    RESIZE_MARGIN = 8
+
     def __init__(self, parent_window):
         super().__init__(parent_window)
         self.parent_window = parent_window
         self.setFixedHeight(48)
-        self.setStyleSheet("""
-            QWidget {
-                background: #FFFFFF;
-                border: none;
-            }
-        """)
+        self.setStyleSheet(TITLE_BAR_STYLE)
         self.setCursor(Qt.ArrowCursor)
 
         self.drag_position = None
@@ -36,7 +34,7 @@ class DraggableTitleBar(QWidget):
 
         title_label = QLabel("AI 塔罗牌占卜")
         title_label.setFont(QFont("Microsoft YaHei", 12, QFont.Bold))
-        title_label.setStyleSheet("color: #000000; background: transparent;")
+        title_label.setStyleSheet("color: #2D2D2D; background: transparent;")
 
         layout.addWidget(title_label)
         layout.addStretch()
@@ -75,8 +73,18 @@ class DraggableTitleBar(QWidget):
             self.parent_window.showMaximized()
             self.max_btn.setText("❐")
 
+    def _is_in_resize_zone(self, pos):
+        """检查是否在调整大小区域"""
+        x = pos.x()
+        return x <= self.RESIZE_MARGIN or x >= self.width() - self.RESIZE_MARGIN
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
+            # 如果在边框调整区域，不处理，让父窗口处理
+            if self._is_in_resize_zone(event.pos()):
+                event.ignore()
+                return
+
             child = self.childAt(event.pos())
             if isinstance(child, QPushButton):
                 event.ignore()
@@ -107,6 +115,13 @@ class DraggableTitleBar(QWidget):
 
             self.parent_window.move(new_pos)
             event.accept()
+        else:
+            # 不在拖拽状态时，检查是否在边框区域，设置相应光标
+            if self._is_in_resize_zone(event.pos()):
+                # 让父窗口处理光标
+                event.ignore()
+            else:
+                self.setCursor(Qt.ArrowCursor)
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
