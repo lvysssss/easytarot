@@ -47,11 +47,11 @@ class AIAnalysisWorker(QThread):
                 self.analysis_error.emit("未初始化OpenAI客户端")
                 return
 
-            # 构建提示词
             prompt = self.build_prompt()
 
-            # 以流式方式调用 OpenAI 接口
             partial_text = ""
+            print(f"[DEBUG] 开始调用API，模型: {self.model_name}")
+            
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[
@@ -63,17 +63,37 @@ class AIAnalysisWorker(QThread):
                 stream=True
             )
 
+            chunk_count = 0
             for chunk in response:
+                chunk_count += 1
                 if not chunk.choices:
+                    print(f"[DEBUG] Chunk {chunk_count}: 没有 choices")
                     continue
+                
                 delta = chunk.choices[0].delta
-                if delta and delta.content:
-                    partial_text += delta.content
+                if delta is None:
+                    print(f"[DEBUG] Chunk {chunk_count}: delta 为 None")
+                    continue
+                
+                content = getattr(delta, 'content', None)
+                if content:
+                    partial_text += content
+                    print(f"[DEBUG] Chunk {chunk_count}: 收到内容长度={len(content)}, 累计长度={len(partial_text)}")
                     self.analysis_update.emit(partial_text)
+                else:
+                    print(f"[DEBUG] Chunk {chunk_count}: content 为空或 None")
 
-            # 发送完成信号
-            self.analysis_complete.emit(partial_text.strip())
+            print(f"[DEBUG] 流式响应结束，共 {chunk_count} 个 chunk，最终文本长度: {len(partial_text)}")
+            
+            if partial_text.strip():
+                self.analysis_complete.emit(partial_text.strip())
+            else:
+                self.analysis_error.emit("AI返回了空内容，请检查API配置或模型是否可用")
+                
         except Exception as e:
+            print(f"[DEBUG] 异常: {type(e).__name__}: {str(e)}")
+            import traceback
+            traceback.print_exc()
             self.analysis_error.emit(f"AI分析失败: {str(e)}")
 
     def build_prompt(self):
