@@ -8,8 +8,8 @@ from PyQt5.QtWidgets import (
     QPushButton, QListWidget, QListWidgetItem, QTextEdit, QMessageBox,
     QApplication
 )
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont, QCursor
+from PyQt5.QtCore import Qt, QPoint, QRect
 
 from gui.styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, CLOSE_BUTTON_STYLE, LIST_WIDGET_STYLE
 
@@ -17,15 +17,30 @@ from gui.styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, CLOSE_BUTTO
 class ModernHistoryDialog(QDialog):
     """历史记录对话框"""
 
+    # 边框调整大小的区域宽度
+    RESIZE_MARGIN = 8
+
+    # 最小窗口尺寸
+    MIN_WIDTH = 600
+    MIN_HEIGHT = 500
+
     def __init__(self, history, parent=None):
         super().__init__(parent)
         self.setWindowTitle("历史记录")
         self.setGeometry(200, 200, 900, 700)
+        self.setMinimumSize(self.MIN_WIDTH, self.MIN_HEIGHT)
         self.setWindowFlags(Qt.FramelessWindowHint)
 
         self.history = history
         self.drag_position = None
         self.is_dragging = False
+
+        # 窗口大小调整相关变量
+        self._resize_direction = None
+        self._resize_start_pos = None
+        self._resize_start_geom = None
+        self.setMouseTracking(True)
+
         self.init_ui()
 
     def init_ui(self):
@@ -172,8 +187,63 @@ class ModernHistoryDialog(QDialog):
 
         self.setLayout(main_layout)
 
+    def _get_resize_direction(self, pos):
+        """根据鼠标位置判断调整大小的方向"""
+        rect = self.rect()
+        x, y = pos.x(), pos.y()
+        margin = self.RESIZE_MARGIN
+
+        # 判断是否在边框调整区域
+        on_left = x <= margin
+        on_right = x >= rect.width() - margin
+        on_top = y <= margin
+        on_bottom = y >= rect.height() - margin
+
+        # 返回调整方向
+        if on_top and on_left:
+            return "top_left"
+        elif on_top and on_right:
+            return "top_right"
+        elif on_bottom and on_left:
+            return "bottom_left"
+        elif on_bottom and on_right:
+            return "bottom_right"
+        elif on_left:
+            return "left"
+        elif on_right:
+            return "right"
+        elif on_top:
+            return "top"
+        elif on_bottom:
+            return "bottom"
+        return None
+
+    def _get_cursor_for_direction(self, direction):
+        """根据调整方向返回对应的鼠标光标"""
+        cursors = {
+            "left": Qt.SizeHorCursor,
+            "right": Qt.SizeHorCursor,
+            "top": Qt.SizeVerCursor,
+            "bottom": Qt.SizeVerCursor,
+            "top_left": Qt.SizeFDiagCursor,
+            "top_right": Qt.SizeBDiagCursor,
+            "bottom_left": Qt.SizeBDiagCursor,
+            "bottom_right": Qt.SizeFDiagCursor,
+        }
+        return cursors.get(direction, Qt.ArrowCursor)
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
+            # 先检查是否在调整大小区域
+            direction = self._get_resize_direction(event.pos())
+            if direction:
+                self._resize_direction = direction
+                self._resize_start_pos = event.globalPos()
+                self._resize_start_geom = self.geometry()
+                event.accept()
+                return
+
+            # 否则检查是否可以拖拽移动
             child = self.childAt(event.pos())
             if isinstance(child, (QPushButton, QListWidget, QTextEdit)):
                 event.ignore()
@@ -184,6 +254,13 @@ class ModernHistoryDialog(QDialog):
             event.accept()
 
     def mouseMoveEvent(self, event):
+        # 如果正在调整大小
+        if self._resize_direction and self._resize_start_pos:
+            self._perform_resize(event.globalPos())
+            event.accept()
+            return
+
+        # 如果正在拖拽移动
         if self.is_dragging and self.drag_position:
             new_pos = event.globalPos() - self.drag_position
 
@@ -200,12 +277,63 @@ class ModernHistoryDialog(QDialog):
 
             self.move(new_pos)
             event.accept()
+            return
+
+        # 更新光标样式
+        direction = self._get_resize_direction(event.pos())
+        if direction:
+            self.setCursor(self._get_cursor_for_direction(direction))
+        else:
+            self.setCursor(Qt.ArrowCursor)
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.is_dragging = False
             self.drag_position = None
+            self._resize_direction = None
+            self._resize_start_pos = None
+            self._resize_start_geom = None
+            self.setCursor(Qt.ArrowCursor)
             event.accept()
+
+    def _perform_resize(self, global_pos):
+        """执行窗口大小调整"""
+        if not self._resize_start_geom:
+            return
+
+        delta = global_pos - self._resize_start_pos
+        geom = QRect(self._resize_start_geom)
+
+        # 根据方向调整窗口
+        if "left" in self._resize_direction:
+            new_left = geom.left() + delta.x()
+            new_width = geom.right() - new_left
+            if new_width >= self.MIN_WIDTH:
+                geom.setLeft(new_left)
+
+        if "right" in self._resize_direction:
+            new_width = geom.width() + delta.x()
+            if new_width >= self.MIN_WIDTH:
+                geom.setRight(geom.right() + delta.x())
+
+        if "top" in self._resize_direction:
+            new_top = geom.top() + delta.y()
+            new_height = geom.bottom() - new_top
+            if new_height >= self.MIN_HEIGHT:
+                geom.setTop(new_top)
+
+        if "bottom" in self._resize_direction:
+            new_height = geom.height() + delta.y()
+            if new_height >= self.MIN_HEIGHT:
+                geom.setBottom(geom.bottom() + delta.y())
+
+        self.setGeometry(geom)
+
+    def leaveEvent(self, event):
+        """鼠标离开窗口 - 恢复默认光标"""
+        if not self._resize_direction:
+            self.setCursor(Qt.ArrowCursor)
+        super().leaveEvent(event)
 
     def on_history_item_clicked(self, item):
         index = item.data(Qt.UserRole)

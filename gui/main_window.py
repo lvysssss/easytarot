@@ -11,8 +11,8 @@ from PyQt5.QtWidgets import (
     QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QFrame, QComboBox,
     QScrollArea, QGroupBox, QGraphicsDropShadowEffect, QGridLayout, QSizePolicy
 )
-from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor, QPalette, QClipboard
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor, QPalette, QClipboard, QCursor
+from PyQt5.QtCore import Qt, QSize, QPoint, QRect
 
 from tarot_deck import TarotDeck, TarotCard
 from gui.widgets import (
@@ -34,11 +34,25 @@ from gui.styles import (
 class ModernTarotApp(QMainWindow):
     """AI塔罗牌占卜主窗口"""
 
+    # 边框调整大小的区域宽度
+    RESIZE_MARGIN = 8
+
+    # 最小窗口尺寸
+    MIN_WIDTH = 800
+    MIN_HEIGHT = 600
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("AI 塔罗牌占卜")
         self.setGeometry(100, 100, 1200, 900)
+        self.setMinimumSize(self.MIN_WIDTH, self.MIN_HEIGHT)
         self.setWindowFlags(Qt.FramelessWindowHint)
+
+        # 窗口大小调整相关变量
+        self._resize_direction = None
+        self._resize_start_pos = None
+        self._resize_start_geom = None
+        self.setMouseTracking(True)
 
         self.init_ui()
 
@@ -312,6 +326,126 @@ class ModernTarotApp(QMainWindow):
 
         # 启动AI分析
         self.analysis_widget.set_analysis(question, self.drawn_cards, save_history_callback)
+
+    def _get_resize_direction(self, pos):
+        """根据鼠标位置判断调整大小的方向"""
+        rect = self.rect()
+        x, y = pos.x(), pos.y()
+        margin = self.RESIZE_MARGIN
+
+        # 判断是否在边框调整区域
+        on_left = x <= margin
+        on_right = x >= rect.width() - margin
+        on_top = y <= margin
+        on_bottom = y >= rect.height() - margin
+
+        # 返回调整方向
+        if on_top and on_left:
+            return "top_left"
+        elif on_top and on_right:
+            return "top_right"
+        elif on_bottom and on_left:
+            return "bottom_left"
+        elif on_bottom and on_right:
+            return "bottom_right"
+        elif on_left:
+            return "left"
+        elif on_right:
+            return "right"
+        elif on_top:
+            return "top"
+        elif on_bottom:
+            return "bottom"
+        return None
+
+    def _get_cursor_for_direction(self, direction):
+        """根据调整方向返回对应的鼠标光标"""
+        cursors = {
+            "left": Qt.SizeHorCursor,
+            "right": Qt.SizeHorCursor,
+            "top": Qt.SizeVerCursor,
+            "bottom": Qt.SizeVerCursor,
+            "top_left": Qt.SizeFDiagCursor,
+            "top_right": Qt.SizeBDiagCursor,
+            "bottom_left": Qt.SizeBDiagCursor,
+            "bottom_right": Qt.SizeFDiagCursor,
+        }
+        return cursors.get(direction, Qt.ArrowCursor)
+
+    def mouseMoveEvent(self, event):
+        """鼠标移动事件 - 更新光标或调整窗口大小"""
+        if self._resize_direction and self._resize_start_pos:
+            # 正在调整大小
+            self._perform_resize(event.globalPos())
+        else:
+            # 更新光标样式
+            direction = self._get_resize_direction(event.pos())
+            if direction:
+                self.setCursor(self._get_cursor_for_direction(direction))
+            else:
+                self.setCursor(Qt.ArrowCursor)
+
+        super().mouseMoveEvent(event)
+
+    def mousePressEvent(self, event):
+        """鼠标按下事件 - 开始调整大小"""
+        if event.button() == Qt.LeftButton:
+            direction = self._get_resize_direction(event.pos())
+            if direction:
+                self._resize_direction = direction
+                self._resize_start_pos = event.globalPos()
+                self._resize_start_geom = self.geometry()
+
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """鼠标释放事件 - 结束调整大小"""
+        if event.button() == Qt.LeftButton:
+            self._resize_direction = None
+            self._resize_start_pos = None
+            self._resize_start_geom = None
+            self.setCursor(Qt.ArrowCursor)
+
+        super().mouseReleaseEvent(event)
+
+    def _perform_resize(self, global_pos):
+        """执行窗口大小调整"""
+        if not self._resize_start_geom:
+            return
+
+        delta = global_pos - self._resize_start_pos
+        geom = QRect(self._resize_start_geom)
+
+        # 根据方向调整窗口
+        if "left" in self._resize_direction:
+            new_left = geom.left() + delta.x()
+            new_width = geom.right() - new_left
+            if new_width >= self.MIN_WIDTH:
+                geom.setLeft(new_left)
+
+        if "right" in self._resize_direction:
+            new_width = geom.width() + delta.x()
+            if new_width >= self.MIN_WIDTH:
+                geom.setRight(geom.right() + delta.x())
+
+        if "top" in self._resize_direction:
+            new_top = geom.top() + delta.y()
+            new_height = geom.bottom() - new_top
+            if new_height >= self.MIN_HEIGHT:
+                geom.setTop(new_top)
+
+        if "bottom" in self._resize_direction:
+            new_height = geom.height() + delta.y()
+            if new_height >= self.MIN_HEIGHT:
+                geom.setBottom(geom.bottom() + delta.y())
+
+        self.setGeometry(geom)
+
+    def leaveEvent(self, event):
+        """鼠标离开窗口 - 恢复默认光标"""
+        if not self._resize_direction:
+            self.setCursor(Qt.ArrowCursor)
+        super().leaveEvent(event)
 
 
 def main():
