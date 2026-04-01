@@ -11,8 +11,8 @@ from PyQt5.QtWidgets import (
     QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QFrame, QComboBox,
     QScrollArea, QGroupBox, QGraphicsDropShadowEffect, QGridLayout, QSizePolicy
 )
-from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor, QPalette, QClipboard, QCursor
-from PyQt5.QtCore import Qt, QSize, QPoint, QRect
+from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor, QPalette, QClipboard, QCursor, QMouseEvent
+from PyQt5.QtCore import Qt, QSize, QPoint, QRect, QEvent
 
 from tarot_deck import TarotDeck, TarotCard
 from gui.widgets import (
@@ -32,14 +32,83 @@ from gui.styles import (
     CONTENT_BACKGROUND,
     BLACK,
     GRAY_TEXT,
+    GRAY_LIGHT,
+    GRAY_BORDER,
 )
+
+
+class ResizeableWidget(QWidget):
+    """支持边框调整大小的容器部件"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.main_window = None
+        self.setMouseTracking(True)
+
+    def set_main_window(self, main_window):
+        """设置主窗口引用"""
+        self.main_window = main_window
+
+    def mouseMoveEvent(self, event):
+        """转发鼠标移动事件到主窗口"""
+        if self.main_window:
+            # 将局部坐标转换为全局坐标
+            global_pos = self.mapToGlobal(event.pos())
+            # 转换为主窗口的局部坐标
+            main_pos = self.main_window.mapFromGlobal(global_pos)
+            # 创建一个新的事件
+            new_event = QMouseEvent(
+                QEvent.MouseMove,
+                main_pos,
+                global_pos,
+                global_pos,
+                event.button(),
+                event.buttons(),
+                event.modifiers()
+            )
+            self.main_window.handle_mouse_move(new_event)
+        super().mouseMoveEvent(event)
+
+    def mousePressEvent(self, event):
+        """转发鼠标按下事件到主窗口"""
+        if self.main_window:
+            global_pos = self.mapToGlobal(event.pos())
+            main_pos = self.main_window.mapFromGlobal(global_pos)
+            new_event = QMouseEvent(
+                QEvent.MouseButtonPress,
+                main_pos,
+                global_pos,
+                global_pos,
+                event.button(),
+                event.buttons(),
+                event.modifiers()
+            )
+            self.main_window.handle_mouse_press(new_event)
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """转发鼠标释放事件到主窗口"""
+        if self.main_window:
+            global_pos = self.mapToGlobal(event.pos())
+            main_pos = self.main_window.mapFromGlobal(global_pos)
+            new_event = QMouseEvent(
+                QEvent.MouseButtonRelease,
+                main_pos,
+                global_pos,
+                global_pos,
+                event.button(),
+                event.buttons(),
+                event.modifiers()
+            )
+            self.main_window.handle_mouse_release(new_event)
+        super().mouseReleaseEvent(event)
 
 
 class ModernTarotApp(QMainWindow):
     """AI塔罗牌占卜主窗口"""
 
     # 边框调整大小的区域宽度
-    RESIZE_MARGIN = 8
+    RESIZE_MARGIN = 10
 
     # 最小窗口尺寸
     MIN_WIDTH = 800
@@ -93,7 +162,9 @@ class ModernTarotApp(QMainWindow):
 
     def init_ui(self):
         """初始化UI界面"""
-        main_container = QWidget()
+        # 使用可调整大小的容器
+        main_container = ResizeableWidget()
+        main_container.set_main_window(self)
         main_container.setStyleSheet(f"""
             QWidget {{
                 background: {MAIN_BACKGROUND};
@@ -106,11 +177,13 @@ class ModernTarotApp(QMainWindow):
 
         title_bar = self.create_title_bar()
 
-        content_widget = QWidget()
+        content_widget = ResizeableWidget()
+        content_widget.set_main_window(self)
         content_widget.setStyleSheet(f"background: {CONTENT_BACKGROUND};")
 
         content_layout = QVBoxLayout()
-        content_layout.setContentsMargins(40, 30, 40, 40)
+        # 底部留出调整大小的边距
+        content_layout.setContentsMargins(self.RESIZE_MARGIN, 30, self.RESIZE_MARGIN, 0)
         content_layout.setSpacing(24)
 
         # 头部标题
@@ -173,12 +246,12 @@ class ModernTarotApp(QMainWindow):
 
         # 抽牌数量选择
         count_container = QWidget()
-        count_container.setStyleSheet("""
-            QWidget {
-                background: #FAFAFA;
+        count_container.setStyleSheet(f"""
+            QWidget {{
+                background: {GRAY_LIGHT};
                 border-radius: 8px;
-                border: 1px solid #E0E0E0;
-            }
+                border: 1px solid {GRAY_BORDER};
+            }}
         """)
         count_layout = QHBoxLayout()
         count_layout.setContentsMargins(16, 0, 16, 0)
@@ -249,12 +322,20 @@ class ModernTarotApp(QMainWindow):
         self.analysis_widget = ModernAIAnalysisWidget()
         self.analysis_widget.setMinimumHeight(240)
 
+        # 底部边缘区域（用于调整窗口大小）
+        bottom_margin = QWidget()
+        bottom_margin.setFixedHeight(self.RESIZE_MARGIN)
+        bottom_margin.setStyleSheet("background: transparent;")
+        bottom_margin.setCursor(Qt.SizeVerCursor)
+        bottom_margin.setMouseTracking(True)
+
         content_layout.addLayout(header_layout)
         content_layout.addWidget(question_group)
         content_layout.addLayout(control_layout)
         content_layout.addWidget(cards_label)
         content_layout.addWidget(self.cards_scroll)
         content_layout.addWidget(self.analysis_widget)
+        content_layout.addWidget(bottom_margin)
 
         content_widget.setLayout(content_layout)
 
@@ -376,8 +457,8 @@ class ModernTarotApp(QMainWindow):
         }
         return cursors.get(direction, Qt.ArrowCursor)
 
-    def mouseMoveEvent(self, event):
-        """鼠标移动事件 - 更新光标或调整窗口大小"""
+    def handle_mouse_move(self, event):
+        """处理鼠标移动事件"""
         if self._resize_direction and self._resize_start_pos:
             # 正在调整大小
             self._perform_resize(event.globalPos())
@@ -389,10 +470,8 @@ class ModernTarotApp(QMainWindow):
             else:
                 self.setCursor(Qt.ArrowCursor)
 
-        super().mouseMoveEvent(event)
-
-    def mousePressEvent(self, event):
-        """鼠标按下事件 - 开始调整大小"""
+    def handle_mouse_press(self, event):
+        """处理鼠标按下事件"""
         if event.button() == Qt.LeftButton:
             direction = self._get_resize_direction(event.pos())
             if direction:
@@ -400,16 +479,27 @@ class ModernTarotApp(QMainWindow):
                 self._resize_start_pos = event.globalPos()
                 self._resize_start_geom = self.geometry()
 
-        super().mousePressEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        """鼠标释放事件 - 结束调整大小"""
+    def handle_mouse_release(self, event):
+        """处理鼠标释放事件"""
         if event.button() == Qt.LeftButton:
             self._resize_direction = None
             self._resize_start_pos = None
             self._resize_start_geom = None
             self.setCursor(Qt.ArrowCursor)
 
+    def mouseMoveEvent(self, event):
+        """鼠标移动事件 - 更新光标或调整窗口大小"""
+        self.handle_mouse_move(event)
+        super().mouseMoveEvent(event)
+
+    def mousePressEvent(self, event):
+        """鼠标按下事件 - 开始调整大小"""
+        self.handle_mouse_press(event)
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """鼠标释放事件 - 结束调整大小"""
+        self.handle_mouse_release(event)
         super().mouseReleaseEvent(event)
 
     def _perform_resize(self, global_pos):

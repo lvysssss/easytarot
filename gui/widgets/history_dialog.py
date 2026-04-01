@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
     QApplication
 )
 from PyQt5.QtGui import QFont, QCursor
-from PyQt5.QtCore import Qt, QPoint, QRect
+from PyQt5.QtCore import Qt, QPoint, QRect, QEvent
 
 from gui.styles import (
     PRIMARY_BUTTON_STYLE,
@@ -30,7 +30,7 @@ class ModernHistoryDialog(QDialog):
     """历史记录对话框"""
 
     # 边框调整大小的区域宽度
-    RESIZE_MARGIN = 8
+    RESIZE_MARGIN = 10
 
     # 最小窗口尺寸
     MIN_WIDTH = 600
@@ -53,6 +53,9 @@ class ModernHistoryDialog(QDialog):
         self._resize_start_geom = None
         self.setMouseTracking(True)
 
+        # 安装应用程序级别的事件过滤器
+        QApplication.instance().installEventFilter(self)
+
         self.init_ui()
 
     def init_ui(self):
@@ -66,6 +69,7 @@ class ModernHistoryDialog(QDialog):
         title_bar = QWidget()
         title_bar.setFixedHeight(48)
         title_bar.setStyleSheet(f"background: {GRAY_LIGHT}; border-bottom: 1px solid {GRAY_BORDER};")
+        title_bar.setMouseTracking(True)
 
         title_layout = QHBoxLayout()
         title_layout.setContentsMargins(20, 0, 0, 0)
@@ -87,15 +91,18 @@ class ModernHistoryDialog(QDialog):
         # 内容区域
         content_widget = QWidget()
         content_widget.setStyleSheet(f"background: {WHITE};")
+        content_widget.setMouseTracking(True)
 
         content_layout = QHBoxLayout()
-        content_layout.setContentsMargins(20, 20, 20, 20)
+        content_layout.setContentsMargins(self.RESIZE_MARGIN, self.RESIZE_MARGIN,
+                                          self.RESIZE_MARGIN, 0)
         content_layout.setSpacing(20)
 
         # 历史列表
         self.history_list = QListWidget()
         self.history_list.setStyleSheet(LIST_WIDGET_STYLE)
         self.history_list.setFixedWidth(320)
+        self.history_list.setMouseTracking(True)
 
         for i, item in enumerate(reversed(self.history)):
             list_item = QListWidgetItem(f"{item['timestamp']}\n{item['question'][:40]}...")
@@ -113,6 +120,7 @@ class ModernHistoryDialog(QDialog):
                 border: 1px solid {GRAY_BORDER};
             }}
         """)
+        detail_container.setMouseTracking(True)
 
         detail_layout = QVBoxLayout()
         detail_layout.setContentsMargins(20, 20, 20, 20)
@@ -147,6 +155,7 @@ class ModernHistoryDialog(QDialog):
         self.analysis_label.setStyleSheet(f"color: {BLACK}; background: transparent;")
         self.analysis_content = QTextEdit()
         self.analysis_content.setReadOnly(True)
+        self.analysis_content.setMouseTracking(True)
         self.analysis_content.setStyleSheet(f"""
             QTextEdit {{
                 background: {WHITE};
@@ -175,8 +184,9 @@ class ModernHistoryDialog(QDialog):
         # 按钮区域
         button_widget = QWidget()
         button_widget.setStyleSheet(f"background: {WHITE};")
+        button_widget.setMouseTracking(True)
         button_layout = QHBoxLayout()
-        button_layout.setContentsMargins(20, 10, 20, 20)
+        button_layout.setContentsMargins(self.RESIZE_MARGIN, 10, self.RESIZE_MARGIN, 0)
 
         self.delete_button = QPushButton("删除选中")
         self.delete_button.setFixedHeight(40)
@@ -193,11 +203,33 @@ class ModernHistoryDialog(QDialog):
         button_layout.addStretch()
         button_widget.setLayout(button_layout)
 
+        # 底部边缘区域
+        bottom_margin = QWidget()
+        bottom_margin.setFixedHeight(self.RESIZE_MARGIN)
+        bottom_margin.setStyleSheet("background: transparent;")
+        bottom_margin.setCursor(Qt.SizeVerCursor)
+        bottom_margin.setMouseTracking(True)
+
         main_layout.addWidget(title_bar)
         main_layout.addWidget(content_widget)
         main_layout.addWidget(button_widget)
+        main_layout.addWidget(bottom_margin)
 
         self.setLayout(main_layout)
+
+    def eventFilter(self, obj, event):
+        """事件过滤器 - 处理所有子部件的鼠标事件"""
+        if event.type() == QEvent.MouseMove:
+            # 检查鼠标是否在此对话框内
+            if self.underMouse():
+                global_pos = event.globalPos()
+                local_pos = self.mapFromGlobal(global_pos)
+                direction = self._get_resize_direction(local_pos)
+                if direction:
+                    self.setCursor(self._get_cursor_for_direction(direction))
+                else:
+                    self.setCursor(Qt.ArrowCursor)
+        return super().eventFilter(obj, event)
 
     def _get_resize_direction(self, pos):
         """根据鼠标位置判断调整大小的方向"""
@@ -347,6 +379,12 @@ class ModernHistoryDialog(QDialog):
             self.setCursor(Qt.ArrowCursor)
         super().leaveEvent(event)
 
+    def closeEvent(self, event):
+        """关闭时移除事件过滤器"""
+        QApplication.instance().removeEventFilter(self)
+        self.parent().save_history()
+        event.accept()
+
     def on_history_item_clicked(self, item):
         index = item.data(Qt.UserRole)
         history_item = self.history[-(index + 1)]
@@ -400,7 +438,3 @@ class ModernHistoryDialog(QDialog):
         cards_text = "\n".join(cards_info)
         clipboard = QApplication.clipboard()
         clipboard.setText(cards_text)
-
-    def closeEvent(self, event):
-        self.parent().save_history()
-        event.accept()
