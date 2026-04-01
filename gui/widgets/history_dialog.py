@@ -1,0 +1,266 @@
+"""
+历史记录对话框
+查看、删除、复制历史占卜记录
+"""
+
+from PyQt5.QtWidgets import (
+    QDialog, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QPushButton, QListWidget, QListWidgetItem, QTextEdit, QMessageBox,
+    QApplication
+)
+from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt
+
+from gui.styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, CLOSE_BUTTON_STYLE, LIST_WIDGET_STYLE
+
+
+class ModernHistoryDialog(QDialog):
+    """历史记录对话框"""
+
+    def __init__(self, history, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("历史记录")
+        self.setGeometry(200, 200, 900, 700)
+        self.setWindowFlags(Qt.FramelessWindowHint)
+
+        self.history = history
+        self.drag_position = None
+        self.is_dragging = False
+        self.init_ui()
+
+    def init_ui(self):
+        self.setStyleSheet("background: #FFFFFF;")
+
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # 标题栏
+        title_bar = QWidget()
+        title_bar.setFixedHeight(48)
+        title_bar.setStyleSheet("background: #FFFFFF; border-bottom: 1px solid #E0E0E0;")
+
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(20, 0, 0, 0)
+
+        title_label = QLabel("历史占卜记录")
+        title_label.setFont(QFont("Microsoft YaHei", 12, QFont.Bold))
+        title_label.setStyleSheet("color: #000000; background: transparent;")
+
+        close_btn = QPushButton("✕")
+        close_btn.setFixedSize(46, 46)
+        close_btn.setStyleSheet(CLOSE_BUTTON_STYLE)
+        close_btn.clicked.connect(self.close)
+
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
+        title_layout.addWidget(close_btn)
+        title_bar.setLayout(title_layout)
+
+        # 内容区域
+        content_widget = QWidget()
+        content_widget.setStyleSheet("background: #FFFFFF;")
+
+        content_layout = QHBoxLayout()
+        content_layout.setContentsMargins(20, 20, 20, 20)
+        content_layout.setSpacing(20)
+
+        # 历史列表
+        self.history_list = QListWidget()
+        self.history_list.setStyleSheet(LIST_WIDGET_STYLE)
+        self.history_list.setFixedWidth(320)
+
+        for i, item in enumerate(reversed(self.history)):
+            list_item = QListWidgetItem(f"{item['timestamp']}\n{item['question'][:40]}...")
+            list_item.setData(Qt.UserRole, i)
+            self.history_list.addItem(list_item)
+
+        self.history_list.itemClicked.connect(self.on_history_item_clicked)
+
+        # 详情容器
+        detail_container = QWidget()
+        detail_container.setStyleSheet("""
+            QWidget {
+                background: #FAFAFA;
+                border-radius: 8px;
+                border: 1px solid #E0E0E0;
+            }
+        """)
+
+        detail_layout = QVBoxLayout()
+        detail_layout.setContentsMargins(20, 20, 20, 20)
+        detail_layout.setSpacing(12)
+
+        section_title = QLabel("解读详情")
+        section_title.setFont(QFont("Microsoft YaHei", 12, QFont.Bold))
+        section_title.setStyleSheet("color: #000000; background: transparent;")
+
+        self.question_label = QLabel("问题:")
+        self.question_label.setFont(QFont("Microsoft YaHei", 10, QFont.Bold))
+        self.question_label.setStyleSheet("color: #000000; background: transparent;")
+        self.question_content = QLabel("")
+        self.question_content.setWordWrap(True)
+        self.question_content.setStyleSheet(
+            "color: #333333; padding: 10px; background: #FFFFFF; "
+            "border-radius: 6px; border: 1px solid #E0E0E0;"
+        )
+
+        self.cards_label = QLabel("抽取的牌:")
+        self.cards_label.setFont(QFont("Microsoft YaHei", 10, QFont.Bold))
+        self.cards_label.setStyleSheet("color: #000000; background: transparent;")
+        self.cards_content = QLabel("")
+        self.cards_content.setWordWrap(True)
+        self.cards_content.setStyleSheet(
+            "color: #333333; padding: 10px; background: #FFFFFF; "
+            "border-radius: 6px; border: 1px solid #E0E0E0;"
+        )
+
+        self.analysis_label = QLabel("解读结果:")
+        self.analysis_label.setFont(QFont("Microsoft YaHei", 10, QFont.Bold))
+        self.analysis_label.setStyleSheet("color: #000000; background: transparent;")
+        self.analysis_content = QTextEdit()
+        self.analysis_content.setReadOnly(True)
+        self.analysis_content.setStyleSheet("""
+            QTextEdit {
+                background: #FFFFFF;
+                border: 1px solid #E0E0E0;
+                border-radius: 8px;
+                padding: 12px;
+                color: #333333;
+                font-size: 12px;
+            }
+        """)
+
+        detail_layout.addWidget(section_title)
+        detail_layout.addWidget(self.question_label)
+        detail_layout.addWidget(self.question_content)
+        detail_layout.addWidget(self.cards_label)
+        detail_layout.addWidget(self.cards_content)
+        detail_layout.addWidget(self.analysis_label)
+        detail_layout.addWidget(self.analysis_content)
+
+        detail_container.setLayout(detail_layout)
+
+        content_layout.addWidget(self.history_list)
+        content_layout.addWidget(detail_container)
+        content_widget.setLayout(content_layout)
+
+        # 按钮区域
+        button_widget = QWidget()
+        button_widget.setStyleSheet("background: #FFFFFF;")
+        button_layout = QHBoxLayout()
+        button_layout.setContentsMargins(20, 10, 20, 20)
+
+        self.delete_button = QPushButton("删除选中")
+        self.delete_button.setFixedHeight(40)
+        self.delete_button.setStyleSheet(PRIMARY_BUTTON_STYLE)
+        self.delete_button.clicked.connect(self.delete_history_item)
+
+        self.copy_button = QPushButton("复制信息")
+        self.copy_button.setFixedHeight(40)
+        self.copy_button.setStyleSheet(SECONDARY_BUTTON_STYLE)
+        self.copy_button.clicked.connect(self.copy_history_info)
+
+        button_layout.addWidget(self.delete_button)
+        button_layout.addWidget(self.copy_button)
+        button_layout.addStretch()
+        button_widget.setLayout(button_layout)
+
+        main_layout.addWidget(title_bar)
+        main_layout.addWidget(content_widget)
+        main_layout.addWidget(button_widget)
+
+        self.setLayout(main_layout)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            child = self.childAt(event.pos())
+            if isinstance(child, (QPushButton, QListWidget, QTextEdit)):
+                event.ignore()
+                return
+
+            self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
+            self.is_dragging = True
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        if self.is_dragging and self.drag_position:
+            new_pos = event.globalPos() - self.drag_position
+
+            screen = QApplication.desktop().screenGeometry()
+            window_geometry = self.frameGeometry()
+
+            min_x = 0
+            min_y = 0
+            max_x = screen.width() - window_geometry.width()
+            max_y = screen.height() - window_geometry.height()
+
+            new_pos.setX(max(min_x, min(new_pos.x(), max_x)))
+            new_pos.setY(max(min_y, min(new_pos.y(), max_y)))
+
+            self.move(new_pos)
+            event.accept()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.is_dragging = False
+            self.drag_position = None
+            event.accept()
+
+    def on_history_item_clicked(self, item):
+        index = item.data(Qt.UserRole)
+        history_item = self.history[-(index + 1)]
+
+        self.question_content.setText(history_item["question"])
+
+        cards_text = "\n".join(
+            [
+                f"• {card['name']} ({card['orientation']}) - {card['meaning']}"
+                for card in history_item["cards"]
+            ]
+        )
+        self.cards_content.setText(cards_text)
+
+        self.analysis_content.setText(history_item["analysis"])
+
+    def delete_history_item(self):
+        selected_items = self.history_list.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "提示", "请先选择要删除的记录")
+            return
+
+        for item in selected_items:
+            index = item.data(Qt.UserRole)
+            del self.history[-(index + 1)]
+
+        self.history_list.clear()
+        for i, item in enumerate(reversed(self.history)):
+            list_item = QListWidgetItem(f"{item['timestamp']}\n{item['question'][:40]}...")
+            list_item.setData(Qt.UserRole, i)
+            self.history_list.addItem(list_item)
+
+        self.question_content.setText("")
+        self.cards_content.setText("")
+        self.analysis_content.setText("")
+
+    def copy_history_info(self):
+        selected_items = self.history_list.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "提示", "请先选择要复制的记录")
+            return
+
+        item = selected_items[0]
+        index = item.data(Qt.UserRole)
+        history_item = self.history[-(index + 1)]
+
+        cards_info = [f"问题：{history_item['question']}"]
+        for i, card in enumerate(history_item["cards"], 1):
+            cards_info.append(f"第{i}张：{card['name']} ({card['orientation']})")
+
+        cards_text = "\n".join(cards_info)
+        clipboard = QApplication.clipboard()
+        clipboard.setText(cards_text)
+
+    def closeEvent(self, event):
+        self.parent().save_history()
+        event.accept()
