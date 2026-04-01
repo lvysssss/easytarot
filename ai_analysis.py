@@ -90,7 +90,6 @@ class AIAnalysisWorker(QThread):
         prompt += "1. 对每张牌在问题背景下的含义解读\n"
         prompt += "2. 牌与牌之间的关联分析\n"
         prompt += "3. 针对用户问题的整体建议\n"
-        prompt += "4. 语言要通俗易懂，避免过于专业的术语\n"
-        prompt += "5. 保持积极正面的态度，给予用户鼓励和支持"
+        prompt += "要求:1.语言要通俗易懂，避免过于专业的术语\n"
 
         return prompt
