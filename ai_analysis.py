@@ -50,8 +50,7 @@ class AIAnalysisWorker(QThread):
             prompt = self.build_prompt()
 
             partial_text = ""
-            print(f"[DEBUG] 开始调用API，模型: {self.model_name}")
-            
+
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[
@@ -67,33 +66,23 @@ class AIAnalysisWorker(QThread):
             for chunk in response:
                 chunk_count += 1
                 if not chunk.choices:
-                    print(f"[DEBUG] Chunk {chunk_count}: 没有 choices")
                     continue
                 
                 delta = chunk.choices[0].delta
                 if delta is None:
-                    print(f"[DEBUG] Chunk {chunk_count}: delta 为 None")
                     continue
                 
                 content = getattr(delta, 'content', None)
                 if content:
                     partial_text += content
-                    print(f"[DEBUG] Chunk {chunk_count}: 收到内容长度={len(content)}, 累计长度={len(partial_text)}")
                     self.analysis_update.emit(partial_text)
-                else:
-                    print(f"[DEBUG] Chunk {chunk_count}: content 为空或 None")
 
-            print(f"[DEBUG] 流式响应结束，共 {chunk_count} 个 chunk，最终文本长度: {len(partial_text)}")
-            
             if partial_text.strip():
                 self.analysis_complete.emit(partial_text.strip())
             else:
                 self.analysis_error.emit("AI返回了空内容，请检查API配置或模型是否可用")
                 
         except Exception as e:
-            print(f"[DEBUG] 异常: {type(e).__name__}: {str(e)}")
-            import traceback
-            traceback.print_exc()
             self.analysis_error.emit(f"AI分析失败: {str(e)}")
 
     def build_prompt(self):
@@ -110,6 +99,6 @@ class AIAnalysisWorker(QThread):
         prompt += "1. 对每张牌在问题背景下的含义解读\n"
         prompt += "2. 牌与牌之间的关联分析\n"
         prompt += "3. 针对用户问题的整体建议\n"
-        prompt += "要求:1.语言要通俗易懂，避免过于专业的术语\n"
+        prompt += "要求:1.语言要通俗易懂，避免过于专业的术语\n2.面对选项问题，尽可以给出最好的选项"
 
         return prompt

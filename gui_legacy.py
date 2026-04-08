@@ -640,16 +640,15 @@ class ModernTarotApp(QMainWindow):
             if os.path.exists(self.history_file):
                 with open(self.history_file, 'r', encoding='utf-8') as f:
                     self.history = json.load(f)
-        except Exception as e:
-            print(f"加载历史记录失败: {str(e)}")
+        except Exception:
             self.history = []
     
     def save_history(self):
         try:
             with open(self.history_file, 'w', encoding='utf-8') as f:
                 json.dump(self.history, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            print(f"保存历史记录失败: {str(e)}")
+        except Exception:
+            pass
     
     def show_history(self):
         history_dialog = ModernHistoryDialog(self.history, self)
