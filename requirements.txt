@@ -1,8 +1,5 @@
 # AI Tarot Application Dependencies
 
-# GUI Framework
-PyQt5>=5.15.0
-
 # OpenAI API Client
 openai>=1.0.0
 

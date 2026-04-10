@@ -2,7 +2,6 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.7+-blue.svg" alt="Python 3.7+">
-  <img src="https://img.shields.io/badge/PyQt5-5.15+-green.svg" alt="PyQt5">
   <img src="https://img.shields.io/badge/OpenAI-API-orange.svg" alt="OpenAI API">
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License">
 </p>
@@ -31,12 +30,12 @@
 
 ## 🎯 项目概述
 
-**EasyTarot** 是一个基于 Python 开发的 AI 塔罗牌占卜应用，融合了传统塔罗牌的神秘智慧与现代人工智能的分析能力。应用提供图形界面(GUI)和命令行界面(CLI)两种使用方式，为用户提供个性化、智能化的塔罗牌解读体验。
+**EasyTarot** 是一个基于 Python 开发的 AI 塔罗牌占卜应用，融合了传统塔罗牌的神秘智慧与现代人工智能的分析能力。应用提供命令行界面(CLI)使用方式，为用户提供个性化、智能化的塔罗牌解读体验。
 
 ### 核心亮点
 
 - 🤖 **AI 智能解读** - 基于 OpenAI API 的深度学习分析
-- 🎨 **双界面支持** - 美观的 GUI 和高效的 CLI 两种模式
+- 💻 **CLI 界面** - 高效的命令行交互模式
 - 🃏 **完整牌组** - 包含 78 张经典塔罗牌（22张大阿卡纳 + 56张小阿卡纳）
 - 📊 **多种牌阵** - 支持 1/3/5/7/10 张牌的经典牌阵
 - 💾 **历史记录** - 自动保存占卜历史，支持回顾分析
@@ -53,6 +52,7 @@
   - **五牌阵** - 深入探讨问题的多个维度
   - **七牌阵** - 全面解析问题各个方面
   - **十牌阵** - 凯尔特十字牌阵，适合重大决策
+- 支持自动抽牌和自选抽牌两种模式
 
 ### 🤖 AI 分析
 - 基于 OpenAI GPT 模型的智能解读
@@ -60,11 +60,9 @@
 - 结合牌面正逆位、牌阵位置进行综合分析
 - 个性化解读，针对用户具体问题给出建议
 
-### 🖥️ 用户界面
-- **GUI 模式**：现代化 PyQt5 界面，支持拖拽、动画效果
+### 💻 用户界面
 - **CLI 模式**：命令行交互，支持自动补全和历史记录
 - 美观的卡片展示，支持牌面详情查看
-- 一键复制占卜结果到剪贴板
 
 ### 💾 数据管理
 - 自动保存占卜历史到本地 JSON 文件
@@ -78,7 +76,6 @@
 | 技术 | 版本 | 用途 |
 |------|------|------|
 | Python | 3.7+ | 核心编程语言 |
-| PyQt5 | 5.15+ | 图形用户界面 |
 | OpenAI | 1.0+ | AI 分析引擎 |
 | python-dotenv | 1.0+ | 环境变量管理 |
 | prompt_toolkit | 3.0+ | CLI 增强（可选） |
@@ -116,46 +113,18 @@
 
 4. **运行应用**
    ```bash
-   # GUI 模式（默认）
    python main.py
-   
-   # CLI 模式
-   python main.py --cli
    ```
-
-### Windows 用户
-
-项目提供 Windows 批处理启动脚本：
-
-```bash
-# 启动 GUI 版本
-start_gui.bat
-
-# 启动 CLI 版本
-start_cli.bat
-
-# 查看 CLI 帮助
-start_cli.bat /?
-```
 
 ---
 
 ## 🚀 使用方法
 
-### GUI 模式
-
-1. 启动应用后，在主界面输入你的问题
-2. 选择要抽取的牌数量（1/3/5/7/10 张）
-3. 点击「抽取塔罗牌」按钮
-4. 等待 AI 分析完成，查看详细解读
-5. 点击「历史记录」查看过往占卜
-6. 点击「复制牌面」将结果复制到剪贴板
-
 ### CLI 模式
 
 ```bash
 # 启动 CLI 交互模式
-python main.py --cli
+python main.py
 
 # 或直接运行 CLI 模块
 python cli_main.py
@@ -163,24 +132,40 @@ python cli_main.py
 
 **CLI 交互示例：**
 ```
-🔮 欢迎来到 AI 塔罗牌占卜
-请输入你的问题 (或输入 'quit' 退出): 我最近的运势如何?
-请选择牌阵:
-1. 单牌 - 快速直接答案
-2. 三牌阵 - 过去、现在、未来
-3. 五牌阵 - 深入分析
-4. 七牌阵 - 全面探讨
-5. 十牌阵 - 凯尔特十字
-选择: 2
+=== AI 塔罗牌占卜 (CLI版本) ===
+输入 '/quit' 或 '/exit' 退出程序
+输入 '/history' 查看历史记录
 
-🎴 抽取的牌:
-┌─────────────────┬─────────────────┬─────────────────┐
-│ 1. 魔术师 (正位) │ 2. 月亮 (逆位)  │ 3. 太阳 (正位)  │
-└─────────────────┴─────────────────┴─────────────────┘
+==================================================
+请输入命令或问题: 我最近的运势如何?
+请选择抽牌数量 (1/3/5/7/10): 3
+请选择抽牌模式 (1=自动模式, 2=自选模式): 1
 
-🤖 AI 解读中...
-[流式输出分析结果]
+问题: 我最近的运势如何?
+
+抽取的塔罗牌:
+第1张: 魔术师 (正位)
+  基本含义: 创造力、意志力、显化能力
+  具体解释: 你拥有强大的创造力和意志力，能够将想法转化为现实。这是一个开始新事物的绝佳时机。
+
+第2张: 月亮 (逆位)
+  基本含义: 释放恐惧、澄清困惑、潜意识浮现
+  具体解释: 你正在摆脱内心的恐惧和困惑，真相逐渐浮出水面。保持警觉但不必过度担忧。
+
+第3张: 太阳 (正位)
+  基本含义: 成功、喜悦、活力、清晰
+  具体解释: 成功和喜悦即将到来，你的努力将得到回报。保持积极乐观的态度。
+
+正在生成AI解读，请稍候...
+AI解读结果:
+[AI 生成的详细解读]
+
+是否复制牌面信息? (y/n):
 ```
+
+**CLI 命令：**
+- `/quit` 或 `/exit` - 退出程序
+- `/history` - 查看历史记录
 
 ---
 
@@ -188,15 +173,12 @@ python cli_main.py
 
 ```
 easytarot/
-├── 📄 main.py                 # 程序入口，处理参数解析
-├── 🖥️  gui.py                 # PyQt5 图形界面实现
+├── 📄 main.py                 # 程序入口
 ├── 💻 cli_main.py             # 命令行界面实现
 ├── 🃏 tarot_deck.py          # 塔罗牌核心逻辑和数据
 ├── 🤖 ai_analysis.py         # OpenAI API 封装和分析
 ├── 📋 requirements.txt        # Python 依赖包列表
 ├── ⚙️  .env.bak               # 环境变量配置模板
-├── 🚀 start_gui.bat          # Windows GUI 启动脚本
-├── 🚀 start_cli.bat          # Windows CLI 启动脚本
 ├── 📖 README.md              # 项目说明文档
 └── 📝 tarot_history.json     # 占卜历史记录（自动生成）
 ```
@@ -205,8 +187,7 @@ easytarot/
 
 | 文件 | 说明 |
 |------|------|
-| `main.py` | 应用程序入口，负责解析命令行参数并启动相应界面 |
-| `gui.py` | 基于 PyQt5 的现代化图形界面，包含动画效果和主题 |
+| `main.py` | 应用程序入口 |
 | `cli_main.py` | 命令行交互界面，支持 prompt_toolkit 增强 |
 | `tarot_deck.py` | 塔罗牌数据结构和抽牌逻辑，包含 78 张牌定义 |
 | `ai_analysis.py` | OpenAI API 封装，实现流式输出和多线程分析 |
@@ -228,6 +209,9 @@ deck = TarotDeck()
 # 抽取指定数量的牌
 cards = deck.draw(3)  # 抽取 3 张牌
 
+# 根据序号抽取特定牌
+cards = deck.draw_by_indices([1, 15, 30])  # 抽取第1、15、30张牌
+
 # 获取单张牌信息
 card = deck.get_card("愚者")
 ```
@@ -237,35 +221,36 @@ card = deck.get_card("愚者")
 | 方法 | 参数 | 返回值 | 说明 |
 |------|------|--------|------|
 | `draw(n)` | `n: int` | `List[TarotCard]` | 抽取 n 张牌 |
+| `draw_by_indices(indices)` | `indices: List[int]` | `List[TarotCard]` | 根据序号抽取牌 |
 | `get_card(name)` | `name: str` | `TarotCard` | 根据名称获取牌 |
 | `reset()` | - | - | 重置牌组 |
 
 ### AIAnalysisWorker 类
 
-AI 分析工作线程，基于 QThread 实现异步分析。
+AI 分析工作器，基于标准线程实现异步分析。
 
 ```python
 from ai_analysis import AIAnalysisWorker
 
-# 创建工作线程
-worker = AIAnalysisWorker(question, cards, spread_type)
+# 创建工作器
+worker = AIAnalysisWorker(question, cards)
 
-# 连接信号
-worker.analysis_complete.connect(on_complete)
-worker.analysis_chunk.connect(on_chunk)
-worker.error_occurred.connect(on_error)
+# 设置回调函数
+worker.on_update = lambda text: print(f"更新: {text}")
+worker.on_complete = lambda text: print(f"完成: {text}")
+worker.on_error = lambda error: print(f"错误: {error}")
 
 # 启动分析
 worker.start()
 ```
 
-**信号说明：**
+**回调函数说明：**
 
-| 信号 | 参数 | 说明 |
+| 回调 | 参数 | 说明 |
 |------|------|------|
-| `analysis_complete` | `result: str` | 分析完成时触发 |
-| `analysis_chunk` | `chunk: str` | 流式输出时触发 |
-| `error_occurred` | `error: str` | 发生错误时触发 |
+| `on_update` | `text: str` | 流式输出时触发 |
+| `on_complete` | `text: str` | 分析完成时触发 |
+| `on_error` | `error: str` | 发生错误时触发 |
 
 ---
 
@@ -304,7 +289,6 @@ OPENAI_MAX_TOKENS=2000
 - 💡 提出新功能建议
 - 📝 改进文档
 - 🔧 提交代码修复
-- 🎨 优化用户界面
 
 ### 贡献流程
 
@@ -382,7 +366,6 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 ## 🙏 致谢
 
 - 感谢 [OpenAI](https://openai.com/) 提供强大的 AI API
-- 感谢 [PyQt5](https://www.riverbankcomputing.com/software/pyqt/) 提供优秀的 GUI 框架
 - 感谢所有贡献者和用户的支持
 
 ---
